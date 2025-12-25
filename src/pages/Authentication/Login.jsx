@@ -34,7 +34,7 @@ import lightlogo from "../../assets/images/logo-light.svg";
 
 const Login = (props) => {
   //meta title
-  document.title = "Login | Skote - Vite React Admin & Dashboard Template";
+  document.title = "Login | Manajemen Rambu Bencana BNPB";
   const dispatch = useDispatch();
 
   const validation = useFormik({

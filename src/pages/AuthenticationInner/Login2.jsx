@@ -1,5 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
+import { layoutWidthTypes } from "../../constants/layout";
+import { CHANGE_LAYOUT_WIDTH } from "../../store/layout/actionTypes";
 import { Col, Container, Form, Row, Input, Label, FormFeedback } from "reactstrap";
 
 // Formik validation
@@ -18,6 +21,11 @@ const Login2 = () => {
 
   //meta title
   document.title = "Login | Manajemen Rambu Bencana BNPB";
+
+  const dispatch = useDispatch();
+  useEffect(() => {
+    dispatch({ type: CHANGE_LAYOUT_WIDTH, payload: layoutWidthTypes.FLUID });
+  }, [dispatch]);
 
   // Form validation 
   const validation = useFormik({

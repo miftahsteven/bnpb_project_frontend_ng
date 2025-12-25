@@ -4,6 +4,7 @@ import App from './App.jsx'
 import * as serviceWorker from "./serviceWorker"
 import { BrowserRouter } from 'react-router-dom'
 import "./i18n"
+import "./index.css" // Added import to apply custom styles
 import { Provider } from 'react-redux'
 import store from './store/index.js'
 

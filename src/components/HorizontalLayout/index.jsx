@@ -16,7 +16,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { createSelector } from "reselect";
 
 //components
-import Navbar from "./Navbar";
+import Navbar from "./NavbarBnpb";
 import Header from "./Header";
 import Footer from "./Footer";
 import RightSidebar from "../CommonForBoth/RightSidebar";

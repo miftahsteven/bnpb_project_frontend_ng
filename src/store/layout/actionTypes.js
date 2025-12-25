@@ -20,3 +20,5 @@ export const CHANGE_PRELOADER = "CHANGE_PRELOADER"
 
 // Layout mode
 export const CHANGE_LAYOUT_MODE = "CHANGE_LAYOUT_MODE";
+
+export const RESET_LAYOUT = "RESET_LAYOUT";

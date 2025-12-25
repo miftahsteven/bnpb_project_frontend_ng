@@ -83,6 +83,7 @@ const TableContainer = ({
   isCustomPageSize,
   handleUserClick,
   isJobListGlobalFilter,
+  customToolbar
 }) => {
 
   const [columnFilters, setColumnFilters] = useState([]);
@@ -169,6 +170,7 @@ const TableContainer = ({
               <i className="mdi mdi-plus me-1"></i> {buttonName}</Button>
           </div>
         </Col>}
+        {customToolbar && <Col className="text-sm-end">{customToolbar}</Col>}
       </Row>
 
       <div className={divClassName ? divClassName : "table-responsive"}>

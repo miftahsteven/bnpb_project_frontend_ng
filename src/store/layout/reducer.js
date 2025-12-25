@@ -10,7 +10,8 @@ import {
   CHANGE_PRELOADER,
   TOGGLE_LEFTMENU,
   SHOW_SIDEBAR,
-  CHANGE_LAYOUT_MODE
+  CHANGE_LAYOUT_MODE,
+  RESET_LAYOUT,
 } from "./actionTypes"
 
 //constants
@@ -26,7 +27,7 @@ import {
 
 const INIT_STATE = {
   layoutType: layoutTypes.HORIZONTAL,
-  layoutModeType: layoutModeTypes.DARK,
+  layoutModeType: layoutModeTypes.LIGHT,
   layoutWidth: layoutWidthTypes.FLUID,
   leftSideBarTheme: leftSideBarThemeTypes.DARK,
   leftSideBarThemeImage: leftBarThemeImageTypes.NONE,
@@ -96,7 +97,9 @@ const Layout = (state = INIT_STATE, action) => {
         ...state,
         leftMenu: action.payload,
       }
-
+    case RESET_LAYOUT:
+      // kembalikan state layout ke default (fluid)
+      return { ...INIT_STATE }
     default:
       return state
   }

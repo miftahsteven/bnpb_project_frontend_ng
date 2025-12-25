@@ -9,13 +9,18 @@ import {
   SHOW_SIDEBAR,
   CHANGE_PRELOADER,
   TOGGLE_LEFTMENU,
-  CHANGE_LAYOUT_MODE
+  CHANGE_LAYOUT_MODE,
+  RESET_LAYOUT
 } from "./actionTypes"
 
 export const changeLayout = layout => ({
   type: CHANGE_LAYOUT,
   payload: layout,
 })
+
+export const resetLayout = () => ({
+  type: RESET_LAYOUT,
+});
 
 export const changePreloader = layout => ({
   type: CHANGE_PRELOADER,
