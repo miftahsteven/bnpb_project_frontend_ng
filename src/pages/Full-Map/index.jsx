@@ -11,9 +11,7 @@ import { useOptions, useCategories, useDisasterTypes, useModels, useCostSources,
 import { set } from "lodash";
 
 
-
-
-const MAPTILER_KEY = "1vaVWvIAivobBBeXZvXf";
+const MAPTILER_KEY = import.meta.env.VITE_APP_API_MAPTILER;
 const styleUrl = `https://api.maptiler.com/maps/streets-v4/style.json?key=${MAPTILER_KEY}`;
 const fallbackStyle = "https://demotiles.maplibre.org/style.json";
 
