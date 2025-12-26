@@ -1,9 +1,10 @@
 import axios, { AxiosHeaders } from 'axios';
 
-const API_BASE = 'http://localhost:8044';
+//buatkan API BASE ke VITE_APP_DATABASEURL di .env
+const baseURL = import.meta.env.VITE_APP_DATABASEURL || 'http://localhost:8044/api';
 
 const api = axios.create({
-    baseURL: `${API_BASE}/api`,
+    baseURL,
     headers: { 'Content-Type': 'application/json' },
 });
 
