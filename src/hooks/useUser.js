@@ -7,6 +7,11 @@ const useUser = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [satuanKerja, setSatuanKerja] = useState([]);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 10,
+    total: 0,
+  });
 
   // Get token from localStorage
   const authData = localStorage.getItem("auth");
@@ -15,7 +20,7 @@ const useUser = () => {
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${BASE_URL}/users`, {
+      const response = await fetch(`${BASE_URL}/users?page=${pagination.page}&pageSize=${pagination.pageSize}`, {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -25,6 +30,11 @@ const useUser = () => {
       if (!response.ok) throw new Error('Failed to fetch users');
       const result = await response.json();
       setUsers(Array.isArray(result) ? result : (result.data || []));
+      setPagination({
+        page: result.page,
+        pageSize: result.pageSize,
+        total: result.total,
+      });
       setError(null);
     } catch (err) {
       setError(err.message || 'Failed to fetch users');
@@ -32,7 +42,7 @@ const useUser = () => {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, pagination]);
 
   const getUser = useCallback(async (id) => {
     setLoading(true);
@@ -152,7 +162,9 @@ const useUser = () => {
     updateUser,
     deleteUser,
     fetchSatuanKerja,
-    satuanKerja        
+    satuanKerja,
+    pagination,
+    setPagination
   };
 };
 

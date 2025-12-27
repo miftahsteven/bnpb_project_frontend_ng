@@ -257,7 +257,11 @@ const TableContainer = ({
         isPagination && (
           <Row>
             <Col sm={12} md={5}>
-              <div className="dataTables_info">Menampilkan {getState().pagination.pageSize} dari {manualPagination ? totalRows : data.length} Data</div>
+            {getState().pagination.pageSize > 0 && (
+              <div className="dataTables_info">
+                Menampilkan {getState().pagination.pageSize} dari {manualPagination ? totalRows : data.length} Data
+                </div>
+            )}
             </Col>
             <Col sm={12} md={7}>
               <div className={paginationWrapper}>

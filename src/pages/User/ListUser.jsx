@@ -10,13 +10,14 @@ import {
   DeleteOutlined, EyeOutlined, ExclamationCircleOutlined 
 } from '@ant-design/icons';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Label, Input, Row, Col } from 'reactstrap';
-import TableUser from '../../components/Common/TableUser';
+import TableContainer from '../../components/Common/TableContainer';
 import Breadcrumbs from '../../components/Common/Breadcrumb';
 
 const { Title } = Typography;
 
 const ListUser = () => {
-  const { users, loading, createUser, updateUser, deleteUser, fetchUsers, error, fetchSatuanKerja, satuanKerja } = useUser();
+  const { users, loading, createUser, updateUser, deleteUser, fetchUsers, error, fetchSatuanKerja, satuanKerja, pagination, setPagination } = useUser();
+  
   
   // Modal States
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -26,17 +27,56 @@ const ListUser = () => {
   const [form] = Form.useForm();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const role = {
+  const role = {    
     1: 'Super Admin',
     2: 'Admin',
     3: 'Manager',
     4: 'User',
   };
 
+  const pageCount = Math.ceil(pagination.total / pagination.pageSize);
+
+  // Pagination State for Table
+  const paginationState = useMemo(() => {
+    return {
+      pageIndex: pagination.page - 1,
+      pageSize: pagination.pageSize,
+    };
+  }, [pagination.page, pagination.pageSize]);
+
+  const handlePaginationChange = (updater) => {
+      setPagination(prev => {
+        const newPagination = typeof updater === 'function'
+          ? updater({ pageIndex: prev.page - 1, pageSize: prev.pageSize })
+          : updater;
+
+        return {
+          ...prev,
+          page: newPagination.pageIndex + 1,
+          pageSize: newPagination.pageSize
+        };
+      });
+    };
+    
+
   useEffect(() => {
     fetchUsers();        
     fetchSatuanKerja();    
   }, [fetchUsers, fetchSatuanKerja]);
+
+  const [filterValues, setFilterValues] = useState({
+    satuanKerja: '',
+    role: '',
+    status: '',
+  });
+
+
+  // Fetch on search change (Debounced by TableContainer)
+      useEffect(() => {
+          if (searchTerm !== undefined) {
+               fetchUsers(1, pagination.pageSize, { ...filterValues, search: searchTerm });
+          }
+      }, [searchTerm]);
 
   const handleOpenEdit = (user) => {
     setSelectedUser(user);
@@ -143,7 +183,7 @@ const ListUser = () => {
     <div className='container-fluid'>
        <Breadcrumbs title="User" breadcrumbItem="Daftar User" />
       <Card>
-        <TableUser
+        <TableContainer
           columns={columns}
           data={users || []}
           isGlobalFilter={true}
@@ -151,15 +191,21 @@ const ListUser = () => {
           onGlobalFilterChangeProp={setSearchTerm}
           isPagination={true}
           SearchPlaceholder="Cari user..."
+          paginationWrapper='dataTables_paginate paging_simple_numbers'
           isCustomPageSize={true}
+          manualPagination={true}
+          pageCount={pageCount}
+          totalRows={pagination.total}
+          paginationState={paginationState}
+          onPaginationChange={handlePaginationChange}
           tableClass="table align-middle table-nowrap table-hover"
           divStyle={{ maxHeight: '400px', overflowY: 'auto' }}
-          theadClass="table-light"
-          paginationWrapper="dataTables_paginate paging_simple_numbers"
+          theadClass="table-light"          
+          setPagination={setPagination}
           customToolbar={ 
             <Button icon={<PlusOutlined />} onClick={() => setIsAddModalOpen(true)} />
           }
-        />
+        />        
       </Card>
 
       {/* Add Modal */}
