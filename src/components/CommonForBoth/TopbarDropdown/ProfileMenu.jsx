@@ -16,25 +16,38 @@ import { Link } from "react-router-dom";
 import withRouter from "../../Common/withRouter";
 
 // users
-import user1 from "../../../assets/images/users/avatar-1.jpg";
+import user1 from "../../../assets/images/icon-user.png";
 
 const ProfileMenu = (props) => {
   // Declare a new state variable, which we'll call "menu"
   const [menu, setMenu] = useState(false);
 
   const [username, setusername] = useState("Admin");
+  const [role, setrole] = useState(false);
+  const [satuanKerja, setsatuanKerja] = useState(false);
 
   useEffect(() => {
-    if (localStorage.getItem("authUser")) {
+    if (localStorage.getItem("auth")) {
       if (import.meta.env.VITE_APP_DEFAULTAUTH === "firebase") {
-        const obj = JSON.parse(localStorage.getItem("authUser"));
-        setusername(obj.email);
+        const obj = JSON.parse(localStorage.getItem("authUser"));      
+        const auth = JSON.parse(localStorage.getItem("auth"));
+        const username = auth.name;
+        const role = auth.role;
+        const satuanKerja = auth.satker_name;
+        setrole(role);
+        setusername(username);
+        setsatuanKerja(satuanKerja);
       } else if (
         import.meta.env.VITE_APP_DEFAULTAUTH === "fake" ||
         import.meta.env.VITE_APP_DEFAULTAUTH === "jwt"
       ) {
-        const obj = JSON.parse(localStorage.getItem("authUser"));
-        setusername(obj.username);
+        const auth = JSON.parse(localStorage.getItem("auth"));
+        const username = auth.name;
+        const role = auth.role;
+        const satuanKerja = auth.satker_name;
+        setrole(role);
+        setusername(username);
+        setsatuanKerja(satuanKerja);
       }
     }
   }, [props.success]);
@@ -55,9 +68,14 @@ const ProfileMenu = (props) => {
             className="rounded-circle header-profile-user"
             src={user1}
             alt="Header Avatar"
-          />
-          <span className="d-none d-xl-inline-block ms-2 me-1">{username}</span>
+          />          
+          
+          <div className="d-none d-xl-inline-block ms-2 me-1 text-start" style={{ verticalAlign: 'middle', lineHeight: '1.2' }}>
+            <span className="d-block fw-semibold">{username}</span>
+            <span className="d-block small text-muted text-uppercase" style={{ fontSize: '12px', color: '#e1a415ff' }}>{satuanKerja}</span>
+          </div>
           <i className="mdi mdi-chevron-down d-none d-xl-inline-block" />
+          
         </DropdownToggle>
         <DropdownMenu className="dropdown-menu-end">
           <DropdownItem tag="a" href="/profile">
@@ -65,8 +83,6 @@ const ProfileMenu = (props) => {
             <i className="bx bx-user font-size-16 align-middle me-1" />
             {props.t("Profile")}{" "}
           </DropdownItem>
-
-
 
           <div className="dropdown-divider" />
           <Link to="/logout" className="dropdown-item">
