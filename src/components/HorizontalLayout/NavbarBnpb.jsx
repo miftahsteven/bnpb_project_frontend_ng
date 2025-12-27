@@ -160,7 +160,28 @@ const Navbar = (props) => {
                     </Link>
                   </div>
                 </li>
+                { role == 1 && (
+                <li className="nav-item dropdown">
+                  <Link
+                    className="nav-link  arrow-none"
+                    to="/#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setextra(!extra);
+                    }}
+                  >
+                    <i className="bx bx-file me-2"></i>
+                    {props.t("User Management")} <div className="arrow-down"></div>
+                  </Link>
+                  <div className={classname("dropdown-menu", { show: extra })}>
 
+                    <Link to="/list-user" className="dropdown-item">
+                      {props.t("List User")}
+                    </Link>                    
+                  </div>
+                </li>
+                )}
+                {role == 1 && (
                 <li className="nav-item dropdown">
                   <Link
                     to="/#"
@@ -182,33 +203,13 @@ const Navbar = (props) => {
                     <Link to="/jenis-rambu" className="dropdown-item">
                       {props.t("List Jenis Rambu")}
                     </Link>
-
-                  </div>
-                </li>
-                { role == 1 && (
-                <li className="nav-item dropdown">
-                  <Link
-                    className="nav-link  arrow-none"
-                    to="/#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setextra(!extra);
-                    }}
-                  >
-                    <i className="bx bx-file me-2"></i>
-                    {props.t("User Management")} <div className="arrow-down"></div>
-                  </Link>
-                  <div className={classname("dropdown-menu", { show: extra })}>
-
-                    <Link to="/list-user" className="dropdown-item">
-                      {props.t("List User")}
-                    </Link>
                     <Link to="/satker" className="dropdown-item">
                       {props.t("Satuan Kerja")}
                     </Link>
                   </div>
                 </li>
                 )}
+                
               </ul>
             </Collapse>
           </nav>
