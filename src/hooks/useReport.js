@@ -30,8 +30,56 @@ const useReport = () => {
     }
   }, []);
 
+  const getReportPerProvince = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    const auth = localStorage.getItem('auth');
+    const token = auth ? JSON.parse(auth).token : null;
+    //console.log(token);
+    try {
+      const response = await axios.get(`${API_URL}/report-perprovince`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+      return response.data;
+    } catch (err) {
+      setError(err.response?.data?.message || err.message);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const getReportPerUser = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    const auth = localStorage.getItem('auth');
+    const token = auth ? JSON.parse(auth).token : null;
+    //console.log(token);
+    try {
+      const response = await axios.get(`${API_URL}/report-peruser`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+      return response.data;
+    } catch (err) {
+      setError(err.response?.data?.message || err.message);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     getDashboardStats,
+    getReportPerProvince,
+    getReportPerUser,
     loading,
     error,
   };

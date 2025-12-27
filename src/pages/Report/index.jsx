@@ -1,20 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { Container } from 'reactstrap';
 import useReport from '../../hooks/useReport';
+import ReactApexChart from "react-apexcharts";
+
 
 const Report = () => {
-  const { getDashboardStats, loading, error } = useReport();
+  const { getDashboardStats, getReportPerProvince, getReportPerUser, loading, error } = useReport();
   const [data, setData] = useState({});
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await getDashboardStats();
-      if (response) {
-        setData(response);
-      }
+      const [statsResponse, provinceResponse, userResponse] = await Promise.all([
+        getDashboardStats(),
+        getReportPerProvince(),
+        getReportPerUser()
+      ]);
+      
+      const mergedData = {
+        summary: statsResponse?.summary || {},
+        rambuPerProvince: provinceResponse?.data || [],
+        rambuPerUser: userResponse?.data || []
+      };
+      
+      setData(mergedData);
     };
     fetchData();
-  }, [getDashboardStats]);
+  }, [getDashboardStats, getReportPerProvince, getReportPerUser]);
 
   const summary = data?.summary || {};
 
@@ -26,10 +37,80 @@ const Report = () => {
     { label: 'Total Semua Rambu', value: summary.total || 0, bg: '#F3E5F5', color: '#7B1FA2' },
   ];
 
+  const rambuPerProvince = data?.rambuPerProvince || [];
+
+  const options = {
+    chart: {
+      type: 'bar',
+      height: 350,
+      zoom: {
+        enabled: false
+      }
+    },
+    plotOptions: {
+      bar: {
+        horizontal: true, // Horizontal bars for easier reading of province names
+        borderRadius: 4
+      }
+    },
+    dataLabels: {
+      enabled: false
+    },
+    xaxis: {
+      categories: rambuPerProvince.map((item) => item.label),
+    },
+    title: {
+      text: 'Jumlah Rambu per Provinsi',
+      align: 'left'
+    }
+  };
+
+  const series = [
+    {
+      name: 'Jumlah Rambu',
+      data: rambuPerProvince.map((item) => item.value),
+    },
+  ];    
+
+  const rambuPerUser = data?.rambuPerUser || [];
+
+  const optionsUser = {
+    chart: {
+      type: 'bar',
+      height: 350,
+      zoom: {
+        enabled: false
+      }
+    },
+    plotOptions: {
+      bar: {
+        horizontal: true, // Horizontal bars for easier reading of province names
+        borderRadius: 4
+      }
+    },
+    dataLabels: {
+      enabled: false
+    },
+    xaxis: {
+      categories: rambuPerUser.map((item) => item.label),
+    },
+    title: {
+      text: 'Jumlah Rambu per User',
+      align: 'left'
+    }
+  };
+
+  const seriesUser = [
+    {
+      name: 'Jumlah Rambu',
+      data: rambuPerUser.map((item) => item.value),
+    },
+  ];        
+
   return (
     <div className="page-content">
-    <Container fluid>
-      <div className="row g-3">
+    <Container fluid>        
+      <div className="row g-3 mb-4">
         {stats.map((item, index) => (
           <div key={index} className="col">
             <div 
@@ -58,7 +139,36 @@ const Report = () => {
           </div>
         ))}
       </div>
-    </Container>
+      
+      <div className="row">
+        <div className="col-6">
+            <div className="card border-0 shadow-sm">
+                <div className="card-body">
+                    <ReactApexChart
+                        options={options}
+                        series={series}
+                        type="bar"
+                        height={350}
+                        className="apex-charts"
+                    />  
+                </div>
+            </div>
+        </div>
+        <div className="col-6">
+            <div className="card border-0 shadow-sm">
+                <div className="card-body">
+                    <ReactApexChart
+                        options={optionsUser}
+                        series={seriesUser}
+                        type="bar"
+                        height={350}
+                        className="apex-charts"
+                    />  
+                </div>
+            </div>  
+        </div>
+      </div>
+    </Container>    
     </div>
   );
 };
