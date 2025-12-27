@@ -69,9 +69,13 @@ const ListUser = () => {
     
 
   useEffect(() => {
-    fetchUsers();        
-    fetchSatuanKerja();    
-  }, [fetchUsers, fetchSatuanKerja]);
+    fetchUsers(pagination.page, pagination.pageSize, { ...filterValues });
+    // fetchSatuanKerja remains separate or handled elsewhere
+  }, [pagination.page, pagination.pageSize, fetchUsers]);
+
+  useEffect(() => {
+      fetchSatuanKerja();
+  }, [fetchSatuanKerja]);
 
   const [filterValues, setFilterValues] = useState({
     satuanKerja: '',
@@ -81,9 +85,13 @@ const ListUser = () => {
 
 
   // Fetch on search change (Debounced by TableContainer)
+  // Fetch on search change (Debounced by TableContainer)
       useEffect(() => {
-          if (searchTerm !== undefined) {
+          if (searchTerm) { // Only if there is a search term, otherwise the pagination effect handles main data
                fetchUsers(1, pagination.pageSize, { ...filterValues, search: searchTerm });
+          } else if (searchTerm === '') {
+              // If search cleared, fetch default (pagination effect might cover this if we reset page, but let's be safe)
+              fetchUsers(pagination.page, pagination.pageSize, { ...filterValues });
           }
       }, [searchTerm]);
 
