@@ -48,9 +48,12 @@ const Login2 = () => {
         // simpan token & user ke localStorage
         localStorage.setItem('auth', JSON.stringify({
           token: res.token,
-          user: res.user,
-          satker_id: res.user?.satker_id ?? null,
-          role: res.user?.role ?? null,
+          name: res.name,
+          username: res.username,
+          user_id: res.id,
+          satker_id: res.satker_id ?? null,
+          satker_name: res.satker_name ?? null,
+          role: res.role ?? null,
         }));
         // redirect ke halaman utama (ubah jika perlu)
         window.location.href = '/dashboard-fullmap';
