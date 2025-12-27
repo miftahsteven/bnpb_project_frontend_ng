@@ -27,10 +27,10 @@ const ListUser = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const role = {
-    1: 'Admin',
-    2: 'User',
+    1: 'Super Admin',
+    2: 'Admin',
     3: 'Manager',
-    4: 'Guest',
+    4: 'User',
   };
 
   useEffect(() => {
