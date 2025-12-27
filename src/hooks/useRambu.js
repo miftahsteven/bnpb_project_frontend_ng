@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-
-const BASE_URL = import.meta.env.VITE_APP_DATABASEURL;
+import api from '../api/axios';
 
 const useRambu = () => {
   const [data, setData] = useState([]);
@@ -16,23 +15,15 @@ const useRambu = () => {
     setLoading(true);
     setError(null);
     try {
-      const authData = localStorage.getItem("auth");
-      const token = authData ? JSON.parse(authData).token : null;
-      
-      const queryParams = new URLSearchParams({
+      const params = {
         page,
         pageSize,
         ...filters
-      });
+      };
 
-      const response = await fetch(`${BASE_URL}/rambu-crud?${queryParams.toString()}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (!response.ok) throw new Error('Failed to fetch Rambu data');
+      const response = await api.get('/rambu-crud', { params });
       
-      const result = await response.json();
+      const result = response.data;
       setData(result.data || []);
       setPagination(prev => ({
         ...prev,
@@ -41,7 +32,7 @@ const useRambu = () => {
         total: result.total || (result.data ? result.data.length : 0)
       }));
     } catch (err) {
-      setError(err.message);
+      setError(err?.response?.data?.message || err.message || 'Failed to fetch Rambu data');
     } finally {
       setLoading(false);
     }
@@ -49,25 +40,14 @@ const useRambu = () => {
 
   const fetchAllRambu = useCallback(async (filters = {}) => {
     try {
-        const authData = localStorage.getItem("auth");
-        const token = authData ? JSON.parse(authData).token : null;
-        
-        // Use a large pageSize to get all data (or handle recursive paging if needed)
-        // For now, assuming 10000 is enough or backend handles 'all'
-        const queryParams = new URLSearchParams({
+        const params = {
           page: 1,
           pageSize: 10000, 
           ...filters
-        });
+        };
   
-        const response = await fetch(`${BASE_URL}/rambu-crud?${queryParams.toString()}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (!response.ok) throw new Error('Failed to fetch filter data');
-        
-        const result = await response.json();
+        const response = await api.get('/rambu-crud', { params });
+        const result = response.data;
         return result.data || [];
     } catch (err) {
         console.error(err);
@@ -79,20 +59,12 @@ const useRambu = () => {
     setLoading(true);
     setError(null);
     try {
-      const authData = localStorage.getItem("auth");
-      const token = authData ? JSON.parse(authData).token : null;
-      
-      const response = await fetch(`${BASE_URL}/rambu-detail/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (!response.ok) throw new Error('Failed to fetch Rambu data');
-      
-      const result = await response.json();
-      return result.data;
+      const response = await api.get(`/rambu-detail/${id}`);
+      // Usually API returns { data: ... } wrapped
+      // Check original: const result = await response.json(); return result.data;
+      return response.data.data;
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || 'Failed to load detail');
       throw err;
     } finally {
       setLoading(false);
@@ -103,20 +75,12 @@ const useRambu = () => {
     setLoading(true);
     setError(null);
     try {
-      const authData = localStorage.getItem("auth");
-      const token = authData ? JSON.parse(authData).token : null;
-      
-      const response = await fetch(`${BASE_URL}/rambu/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (!response.ok) throw new Error('Failed to fetch Rambu data');
-      
-      const result = await response.json();
-      return result;
+      const response = await api.get(`/rambu/${id}`);
+      // Original: return result; (where result = await response.json())
+      return response.data;
     } catch (err) {
-      setError(err.message);
+      console.error(err);
+      setError(err?.message);
       throw err;
     } finally {
       setLoading(false);
@@ -126,34 +90,15 @@ const useRambu = () => {
   const createRambu = async (payload) => {
     setLoading(true);
     try {
-      const authData = localStorage.getItem("auth");
-      const token = authData ? JSON.parse(authData).token : null;
-      
-      const isFormData = payload instanceof FormData;
-      const headers = {
-        'Authorization': `Bearer ${token}`
-      };
-      
-      if (!isFormData) {
-        headers['Content-Type'] = 'application/json';
-      }
-
-      const response = await fetch(`${BASE_URL}/rambu`, {
-        method: 'POST',
-        headers,
-        body: isFormData ? payload : JSON.stringify(payload),
-      });
-      
-      if (!response.ok) {
-        const errRes = await response.json();
-        throw new Error(errRes.error || 'Failed to create Rambu');
-      }
+      // Axios handles FormData vs JSON automatically
+      const response = await api.post('/rambu', payload);
       
       await fetchRambu(pagination.page, pagination.pageSize);
-      return await response.json();
+      return response.data;
     } catch (err) {
-      setError(err.message);
-      throw err;
+      const msg = err?.response?.data?.error || err.message || 'Failed to create Rambu';
+      setError(msg);
+      throw new Error(msg);
     } finally {
       setLoading(false);
     }
@@ -162,36 +107,13 @@ const useRambu = () => {
   const updateRambu = async (id, payload) => {
     setLoading(true);
     try {
-      const authData = localStorage.getItem("auth");
-      const token = authData ? JSON.parse(authData).token : null;
-      
-      const isFormData = payload instanceof FormData;
-      const headers = {
-        'Authorization': `Bearer ${token}`
-      };
-      
-      if (!isFormData) {
-        headers['Content-Type'] = 'application/json';
-      }
-
-      const response = await fetch(`${BASE_URL}/rambu/${id}`, {
-        method: 'PATCH',
-        headers,
-        body: isFormData ? payload : JSON.stringify(payload),
-      });
-      
-      if (!response.ok) {
-         try {
-            const errRes = await response.json();
-            throw new Error(errRes.error || 'Failed to update Rambu');
-         } catch (e) {
-            throw new Error('Failed to update Rambu (Status ' + response.status + ')');
-         }
-      }
+      const response = await api.patch(`/rambu/${id}`, payload);
       await fetchRambu(pagination.page, pagination.pageSize);
+      return response.data;
     } catch (err) {
-      setError(err.message);
-      throw err;
+       const msg = err?.response?.data?.error || 'Failed to update Rambu';
+       setError(msg);
+       throw new Error(msg);
     } finally {
       setLoading(false);
     }
@@ -200,19 +122,12 @@ const useRambu = () => {
   const deleteRambu = async (id) => {
     setLoading(true);
     try {
-      const authData = localStorage.getItem("auth");
-      const token = authData ? JSON.parse(authData).token : null;
-      const response = await fetch(`${BASE_URL}/rambu/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (!response.ok) throw new Error('Failed to delete Rambu');
+      await api.delete(`/rambu/${id}`);
       await fetchRambu(pagination.page, pagination.pageSize);
     } catch (err) {
-      setError(err.message);
-      throw err;
+      const msg = err?.response?.data?.message || err.message || 'Failed to delete Rambu';
+      setError(msg);
+      throw new Error(msg);
     } finally {
       setLoading(false);
     }
@@ -221,19 +136,12 @@ const useRambu = () => {
   const deleteTrashRambu = async (id) => {
     setLoading(true);
     try {
-      const authData = localStorage.getItem("auth");
-      const token = authData ? JSON.parse(authData).token : null;
-      const response = await fetch(`${BASE_URL}/rambu-trash/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (!response.ok) throw new Error('Failed to delete Rambu');
+      await api.put(`/rambu-trash/${id}`);
       await fetchRambu(pagination.page, pagination.pageSize);
     } catch (err) {
-      setError(err.message);
-      throw err;
+      const msg = err?.response?.data?.message || err.message || 'Failed to delete Rambu';
+      setError(msg);
+      throw new Error(msg);
     } finally {
       setLoading(false);
     }
@@ -242,21 +150,12 @@ const useRambu = () => {
   const updateRambuStatus = async (id, status) => {
     setLoading(true);
     try {
-      const authData = localStorage.getItem("auth");
-      const token = authData ? JSON.parse(authData).token : null;
-      const response = await fetch(`${BASE_URL}/rambu-status/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify({ status }),
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      if (!response.ok) throw new Error('Failed to update Rambu status');
+      await api.put(`/rambu-status/${id}`, { status });
       await fetchRambu(pagination.page, pagination.pageSize);
     } catch (err) {
-      setError(err.message);
-      throw err;
+      const msg = err?.response?.data?.message || err.message || 'Failed to update Rambu status';
+      setError(msg);
+      throw new Error(msg);
     } finally {
       setLoading(false);
     }
@@ -277,7 +176,6 @@ const useRambu = () => {
     updateRambu,
     deleteRambu,
     detailRambu,
-    deleteTrashRambu,
     deleteTrashRambu,
     getRambuForEdit,
     updateRambuStatus,
