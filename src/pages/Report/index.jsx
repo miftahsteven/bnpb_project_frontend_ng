@@ -141,7 +141,7 @@ const Report = () => {
       </div>
       
       <div className="row">
-        <div className="col-6">
+        <div className="col-12 col-md-6">
             <div className="card border-0 shadow-sm">
                 <div className="card-body">
                     <ReactApexChart
@@ -154,7 +154,7 @@ const Report = () => {
                 </div>
             </div>
         </div>
-        <div className="col-6">
+        <div className="col-12 col-md-6">
             <div className="card border-0 shadow-sm">
                 <div className="card-body">
                     <ReactApexChart
