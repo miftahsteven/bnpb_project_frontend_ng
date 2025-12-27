@@ -16,7 +16,7 @@ import Breadcrumbs from '../../components/Common/Breadcrumb';
 const { Title } = Typography;
 
 const ListUser = () => {
-  const { users: rawData, loading, createUser, updateUser, deleteUser, fetchUsers, error, fetchSatuanKerja, satuanKerja, pagination, setPagination } = useUser();
+  const { users: rawData, loading, createUser, updateUser, deleteUser, fetchUsers, getUser, error, fetchSatuanKerja, satuanKerja, pagination, setPagination } = useUser();
   
   const data = useMemo(() => {
           return rawData || [];
@@ -36,6 +36,11 @@ const ListUser = () => {
     2: 'Admin',
     3: 'Manager',
     4: 'User',
+  };
+
+  const status = {
+    1: 'Active',
+    2: 'Inactive',
   };
 
   const pageCount = Math.ceil(pagination.total / pagination.pageSize);
@@ -82,15 +87,38 @@ const ListUser = () => {
           }
       }, [searchTerm]);
 
-  const handleOpenEdit = (user) => {
-    setSelectedUser(user);
-    form.setFieldsValue(user);
-    setIsEditModalOpen(true);
+  const handleOpenEdit = async (user) => {
+    try {
+        const detail = await getUser(user.id);
+        setSelectedUser(detail);
+        form.setFieldsValue({
+            ...detail,
+            password: '', // Kosongkan password karena optional
+            role: String(detail.role),
+            satker_id: detail.satker_id,
+            status: String(detail.status)
+        });
+        setIsEditModalOpen(true);
+    } catch (e) {
+        console.error("Failed to fetch user detail", e);
+    }
   };
 
-  const handleOpenDetail = (user) => {
-    setSelectedUser(user);
-    setIsDetailModalOpen(true);
+  const handleOpenDetail = async (user) => {
+    try {
+        const detail = await getUser(user.id);
+        setSelectedUser(detail);
+        setIsDetailModalOpen(true);
+    } catch (e) {
+        console.error("Failed to fetch user detail", e);
+    }
+  };
+
+  const handleEditFromDetail = () => {
+      setIsDetailModalOpen(false);
+      // Pass the fully loaded selectedUser to open edit immediately or simple object with id
+      // Since handleOpenEdit re-fetches, passing { id: selectedUser.id } is safe.
+      handleOpenEdit({ id: selectedUser.id });
   };
 
   const handleAdd = async (values) => {
@@ -99,11 +127,25 @@ const ListUser = () => {
     form.resetFields();
   };
 
-  const handleUpdate = async (values) => {
-    await updateUser(selectedUser.id, values);
-    setIsEditModalOpen(false);
-    setSelectedUser(null);
-    form.resetFields();
+  const handleUpdate = async () => {
+    try {
+        const values = await form.validateFields();
+        // Jika password kosong, hapus dari payload agar tidak terupdate
+        if (!values.password) {
+            delete values.password;
+        } else {
+            // Jika ada, biarkan (backend akan hash)
+        }
+        values.role = Number(values.role);
+        values.status = Number(values.status);
+
+        await updateUser(selectedUser.id, values);
+        setIsEditModalOpen(false);
+        setSelectedUser(null);
+        form.resetFields();
+    } catch (e) {
+        console.error("Update failed", e);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -149,7 +191,7 @@ const ListUser = () => {
       },
       {
         header: 'Satuan Kerja',
-        accessorKey: 'satuanKerja.name',
+        accessorKey: 'satker_name',
         enableColumnFilter: false,
       },
       {
@@ -158,6 +200,15 @@ const ListUser = () => {
         cell: (cellProps) => {
           const record = cellProps.row.original;
           return role[record.role];
+        },
+        enableColumnFilter: false,
+      },
+      {
+        header: 'Status',
+        accessorKey: 'status',
+        cell: (cellProps) => {
+          const record = cellProps.row.original;
+          return record.status == 1 ? 'Active' : 'Inactive';
         },
         enableColumnFilter: false,
       },
@@ -282,25 +333,63 @@ const ListUser = () => {
       <Modal
         isOpen={isEditModalOpen}
         toggle={() => setIsEditModalOpen(!isEditModalOpen)}
+        size='md'
       >
         <ModalHeader toggle={() => setIsEditModalOpen(!isEditModalOpen)}>Edit User</ModalHeader>
         <ModalBody>
           <Form form={form} layout="vertical" onFinish={handleUpdate}>
-            <Form.Item name="name" label="Nama" rules={[{ required: true }]}>
-              <AntInput />
-            </Form.Item>
-            <Form.Item name="username" label="Username" rules={[{ required: true }]}>
-              <AntInput />
-            </Form.Item>
-            <Form.Item name="email" label="Email" rules={[{ required: true, type: 'email' }]}>
-              <AntInput />
-            </Form.Item>
-            {/* Note: Edit Modal usually needs role/satker too? Assuming user only requested Add Modal update for now or Edit Modal uses existing fields */}
+             <Row>
+                <Col md={6}>
+                   <Form.Item name="name" label="Nama" rules={[{ required: true }]}>
+                     <AntInput placeholder="Nama" />
+                   </Form.Item>
+                </Col>
+                <Col md={6}>
+                   <Form.Item name="username" label="Username" rules={[{ required: true }]}>
+                     <AntInput placeholder="Username" />
+                   </Form.Item>
+                </Col>               
+                <Col md={6}>
+                   <Form.Item name="password" label="Password (Isi jika ingin mengubah)">
+                     <AntInput.Password placeholder="Password Baru" />
+                   </Form.Item>
+                </Col>
+                <Col md={6}>
+                  <Form.Item name="satker_id" label="Satuan Kerja" rules={[{ required: true }]}>
+                    <Select placeholder="Pilih Satuan Kerja">
+                      {satuanKerja && satuanKerja.map((item) => (
+                        <Select.Option key={item.id} value={item.id}>
+                          {item.name}
+                        </Select.Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col md={6}>
+                  <Form.Item name="role" label="Role" rules={[{ required: true }]}>
+                    <Select placeholder="Pilih Role">
+                      {Object.entries(role).map(([key, value]) => (
+                        <Select.Option key={key} value={key}>
+                          {value}
+                        </Select.Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col md={6}>
+                  <Form.Item name="status" label="Status" rules={[{ required: true }]}>
+                    <Select placeholder="Pilih Status">
+                       <Select.Option value="1">Aktif</Select.Option>
+                       <Select.Option value="0">Non-Aktif</Select.Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+             </Row>
           </Form>
         </ModalBody>
         <ModalFooter>
           <Button onClick={() => setIsEditModalOpen(false)}>Batal</Button>
-          <Button type="primary" onClick={() => form.submit()}>Simpan</Button>
+          <Button type="primary" onClick={handleUpdate}>Simpan Perubahan</Button>
         </ModalFooter>
       </Modal>
 
@@ -308,21 +397,25 @@ const ListUser = () => {
       <Modal
         isOpen={isDetailModalOpen}
         toggle={() => setIsDetailModalOpen(!isDetailModalOpen)}
+        size='lg'
       >
         <ModalHeader toggle={() => setIsDetailModalOpen(!isDetailModalOpen)}>Detail User</ModalHeader>
         <ModalBody>
           {selectedUser && (
-            <Descriptions bordered column={1}>
+            <Descriptions bordered column={1} layout="horizontal">
               <Descriptions.Item label="Nama">{selectedUser.name}</Descriptions.Item>
               <Descriptions.Item label="Username">{selectedUser.username}</Descriptions.Item>
-              <Descriptions.Item label="Email">{selectedUser.email}</Descriptions.Item>
+              <Descriptions.Item label="Satuan Kerja">{selectedUser.satuanKerja?.name || '-'}</Descriptions.Item>
               <Descriptions.Item label="Role">{role[selectedUser.role]}</Descriptions.Item>
-              <Descriptions.Item label="Dibuat Pada">{selectedUser.createdAt}</Descriptions.Item>
+              <Descriptions.Item label="Status">
+                  {selectedUser.status === 1 ? 'Aktif' : 'Non-Aktif'}
+              </Descriptions.Item>
             </Descriptions>
           )}
         </ModalBody>
         <ModalFooter>
           <Button onClick={() => setIsDetailModalOpen(false)}>Tutup</Button>
+          <Button type="primary" onClick={handleEditFromDetail} icon={<EditOutlined />}>Edit Data</Button>
         </ModalFooter>
       </Modal>
     </div>
