@@ -11,8 +11,8 @@ import { useFormik } from "formik";
 import { login } from "../../api/auth";
 
 // import images
-import logoDark from "../../assets/images/logo_BNPB.png";
-import logoLight from "../../assets/images/logo-light.png";
+//import logoDark from "../../assets/images/logo_BNPB.png";
+//import logoLight from "../../assets/images/logo-light.png";
 import CarouselPage from "./CarouselPage";
 
 const Login2 = () => {
