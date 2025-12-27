@@ -2,7 +2,8 @@ import React from "react";
 import { Navigate } from "react-router-dom";
 import Logout from "../pages/AuthenticationInner/Logout";
 import Login2 from "../pages/AuthenticationInner/Login2";
-import Dashboard from "../pages/Dashboard/index";
+//import Dashboard from "../pages/Dashboard/index";
+import Report from "../pages/Report/index";
 import ForgetPwd from "../pages/Authentication/ForgetPassword";
 //import DatatableTables from "../pages/Tables/DatatableTables"; 
 import ListRambu from "../pages/Rambu/ListRambu";
@@ -19,7 +20,7 @@ import UserProfile from "../pages/Authentication/user-profile";
 import Calendar from "../pages/Calendar/index";
 
 const authProtectedRoutes = [
-  { path: "/dashboard", component: <Dashboard /> },
+  { path: "/dashboard", component: <Report /> },
   { path: "/list-rambu", component: <ListRambu /> },
   { path: "/list-user", component: <ListUser /> },
   { path: "/profile", component: <UserProfile /> },
