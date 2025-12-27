@@ -6,6 +6,7 @@ import Dashboard from "../pages/Dashboard/index";
 import ForgetPwd from "../pages/Authentication/ForgetPassword";
 //import DatatableTables from "../pages/Tables/DatatableTables"; 
 import ListRambu from "../pages/Rambu/ListRambu";
+import ListUser from "../pages/User/ListUser";
 
 //FULL MAP
 import FullMap from "../pages/Full-Map/index";
@@ -20,6 +21,7 @@ import Calendar from "../pages/Calendar/index";
 const authProtectedRoutes = [
   { path: "/dashboard", component: <Dashboard /> },
   { path: "/list-rambu", component: <ListRambu /> },
+  { path: "/list-user", component: <ListUser /> },
   { path: "/profile", component: <UserProfile /> },
   { path: "/dashboard-fullmap", component: <FullMap /> },
 ];

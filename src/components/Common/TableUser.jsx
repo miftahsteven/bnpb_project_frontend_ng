@@ -1,0 +1,352 @@
+import React, { Fragment, useEffect, useState } from "react";
+import { Row, Table, Button, Col } from "reactstrap";
+import { Link } from "react-router-dom";
+
+import {
+  useReactTable,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  flexRender
+} from '@tanstack/react-table';
+
+import { rankItem } from '@tanstack/match-sorter-utils';
+import JobListGlobalFilter from "./GlobalSearchFilter";
+
+// Column Filter
+const Filter = ({
+  column
+}) => {
+  const columnFilterValue = column.getFilterValue();
+
+  return (
+    <>
+      <DebouncedInput
+        type="text"
+        value={(columnFilterValue ?? '')}
+        onChange={value => column.setFilterValue(value)}
+        placeholder="Search..."
+        className="w-36 border shadow rounded"
+        list={column.id + 'list'}
+      />
+      <div className="h-1" />
+    </>
+  );
+};
+
+// Global Filter
+const DebouncedInput = ({
+  value: initialValue,
+  onChange,
+  debounce = 500,
+  ...props
+}) => {
+  const [value, setValue] = useState(initialValue);
+
+  useEffect(() => {
+    setValue(initialValue);
+  }, [initialValue]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      onChange(value);
+    }, debounce);
+
+    return () => clearTimeout(timeout);
+  }, [debounce, onChange, value]);
+
+  return (
+    <React.Fragment>
+      <Col sm={4}>
+        <input {...props} value={value} onChange={e => setValue(e.target.value)} />
+      </Col>
+    </React.Fragment>
+  );
+};
+
+const TableUser = ({
+  columns,
+  data,
+  tableClass,
+  theadClass,
+  divClassName,
+  divStyle, // New prop for container style
+  isBordered,
+  isPagination,
+  isGlobalFilter,
+  paginationWrapper,
+  SearchPlaceholder,
+  pagination,
+  buttonClass,
+  buttonName,
+  isAddButton,
+  isCustomPageSize,
+  handleUserClick,
+  isJobListGlobalFilter,
+  customToolbar,
+  manualPagination = false,
+  pageCount = -1,
+  totalRows = 0,
+  paginationState,
+  onPaginationChange,
+  globalFilterValue, // Controlled state
+  onGlobalFilterChangeProp // Controlled handler
+}) => {
+
+  const [columnFilters, setColumnFilters] = useState([]);
+  const [internalGlobalFilter, setInternalGlobalFilter] = useState('');
+
+  const globalFilter = globalFilterValue !== undefined ? globalFilterValue : internalGlobalFilter;
+  const setGlobalFilter = onGlobalFilterChangeProp !== undefined ? onGlobalFilterChangeProp : setInternalGlobalFilter;
+
+  const fuzzyFilter = (row, columnId, value, addMeta) => {
+    const itemRank = rankItem(row.getValue(columnId), value);
+    addMeta({
+      itemRank
+    });
+    return itemRank.passed;
+  };
+
+  const table = useReactTable({
+    columns,
+    data,
+    filterFns: {
+      fuzzy: fuzzyFilter,
+    },
+    pageCount,
+    manualPagination,
+    state: {
+      columnFilters,
+      globalFilter,
+      ...(manualPagination && paginationState ? { pagination: paginationState } : {})
+    },
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    ...(manualPagination && onPaginationChange ? { onPaginationChange } : {}),
+    globalFilterFn: fuzzyFilter,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  });
+
+  const {
+    getHeaderGroups,
+    getRowModel,
+    getCanPreviousPage,
+    getCanNextPage,
+    getPageOptions,
+    setPageIndex,
+    nextPage,
+    previousPage,
+    // setPageSize,
+    getState
+  } = table;
+
+  const getVisiblePages = () => {
+    const total = table.getPageCount();
+    const current = getState().pagination.pageIndex;
+    const max = 5;
+
+    if (total <= 1) return [0]; 
+
+    if (total <= max) {
+      return Array.from({ length: total }, (_, i) => i);
+    }
+
+    let start = current - 2;
+    let end = current + 2;
+
+    if (start < 0) {
+      start = 0;
+      end = max - 1;
+    } else if (end >= total) {
+      end = total - 1;
+      start = total - max;
+    }
+
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  };
+
+  // useEffect(() => {
+  //   Number(customPageSize) && setPageSize(Number(customPageSize));
+  // }, [customPageSize, setPageSize]);
+
+  const handlePageClick = (e, pageIndex) => {
+    e.preventDefault();
+    if (pageIndex >= 0 && pageIndex < table.getPageCount()) {
+      setPageIndex(pageIndex);
+    }
+  };
+
+  const handlePrevClick = (e) => {
+    e.preventDefault();
+    if (getCanPreviousPage()) {
+      previousPage();
+    }
+  };
+
+  const handleNextClick = (e) => {
+    e.preventDefault();
+    if (getCanNextPage()) {
+      nextPage();
+    }
+  };
+
+  return (
+    <Fragment>
+
+      <Row className="mb-2">
+        {isCustomPageSize && (
+          <Col sm={2}>
+            <select
+              className="form-select pageSize mb-2"
+              value={table.getState().pagination.pageSize}
+              onChange={e => {
+                table.setPageSize(Number(e.target.value))
+              }}
+            >
+              {[10, 20, 30, 40, 50].map(pageSize => (
+                <option key={pageSize} value={pageSize}>
+                  Show {pageSize}
+                </option>
+              ))}
+            </select>
+          </Col>
+        )}
+
+        {isGlobalFilter && <DebouncedInput
+          value={globalFilter ?? ''}
+          onChange={value => setGlobalFilter(String(value))}
+          className="form-control search-box me-2 mb-2 d-inline-block"
+          placeholder={SearchPlaceholder}
+        />}
+
+        {isJobListGlobalFilter && <JobListGlobalFilter setGlobalFilter={setGlobalFilter} />}
+
+        {isAddButton && <Col sm={6}>
+          <div className="text-sm-end">
+            <Button type="button" className={buttonClass} onClick={handleUserClick}>
+              <i className="mdi mdi-plus me-1"></i> {buttonName}</Button>
+          </div>
+        </Col>}
+        {customToolbar && <Col className="text-sm-end">{customToolbar}</Col>}
+      </Row>
+
+      <div className={divClassName ? divClassName : "table-responsive"} style={divStyle}>
+        <Table hover className={tableClass} bordered={isBordered}>
+          <thead className={theadClass}>
+            {getHeaderGroups().map(headerGroup => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map(header => {
+                  return (
+                    <th key={header.id} colSpan={header.colSpan} className={`${header.column.columnDef.enableSorting ? "sorting sorting_desc" : ""}`} style={{ position: 'sticky', top: 0, zIndex: 1, backgroundColor: '#eff2f7' }}>
+                      {header.isPlaceholder ? null : (
+                        <React.Fragment>
+                          <div
+                            {...{
+                              className: header.column.getCanSort()
+                                ? 'cursor-pointer select-none'
+                                : '',
+                              onClick: header.column.getToggleSortingHandler(),
+                            }}
+                          >
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                            {
+                              {
+                                asc: '',
+                                desc: '',
+                              }
+                              [header.column.getIsSorted()] ?? null}
+                          </div>
+                          {header.column.getCanFilter() ? (
+                            <div>
+                              <Filter column={header.column} table={table} />
+                            </div>
+                          ) : null}
+                        </React.Fragment>
+                      )}
+                    </th>
+                  );
+                })}
+              </tr>
+            ))}
+          </thead>
+
+          <tbody>
+            {getRowModel().rows.map(row => {
+              return (
+                <tr key={row.id}>
+                  {row.getVisibleCells().map(cell => {
+                    return (
+                      <td key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </Table>
+      </div>
+
+
+      {
+        isPagination && (
+          <Row>
+            <Col sm={12} md={5}>
+              {/* <div className="dataTables_info">
+                Menampilkan {getState().pagination.pageSize} Data
+              </div> */}
+            </Col>
+            <Col sm={12} md={7}>
+              <div className={paginationWrapper}>
+                <ul className={pagination}>
+                  <li className={`paginate_button page-item previous ${!getCanPreviousPage() ? "disabled" : ""}`}>
+                    <Link to="#" className="page-link" onClick={(e) => handlePageClick(e, 0)}>
+                      <i className="mdi mdi-chevron-double-left"></i>
+                    </Link>
+                  </li>
+                  <li className={`paginate_button page-item previous ${!getCanPreviousPage() ? "disabled" : ""}`}>
+                    <Link to="#" className="page-link" onClick={handlePrevClick}>
+                      <i className="mdi mdi-chevron-left"></i>
+                    </Link>
+                  </li>
+                  {getVisiblePages().map((item, key) => (
+                    <li key={key} className={`paginate_button page-item ${getState().pagination.pageIndex === item ? "active" : ""}`}>
+                      <Link to="#" className="page-link" onClick={(e) => handlePageClick(e, item)}>{item + 1}</Link>
+                    </li>
+                  ))}
+                  <li className={`paginate_button page-item next ${!getCanNextPage() ? "disabled" : ""}`}>
+                    <Link to="#" className="page-link" onClick={handleNextClick}>
+                      <i className="mdi mdi-chevron-right"></i>
+                    </Link>
+                  </li>
+                  <li className={`paginate_button page-item next ${!getCanNextPage() ? "disabled" : ""}`}>
+                    <Link to="#" className="page-link" onClick={(e) => handlePageClick(e, table.getPageCount() - 1)}>
+                      <i className="mdi mdi-chevron-double-right"></i>
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+            </Col>
+          </Row>
+        )
+      }
+    </Fragment>
+  );
+};
+
+TableUser.defaultProps = {
+  pagination: "pagination justify-content-end mb-2 gap-1"
+};
+
+export default TableUser;
