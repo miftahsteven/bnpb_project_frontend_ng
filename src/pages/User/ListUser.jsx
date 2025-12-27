@@ -130,6 +130,14 @@ const ListUser = () => {
   const columns = useMemo(
     () => [
       {
+        header: 'No',
+        accessorKey: 'no',
+        cell: (cellProps) => {
+          return (pagination.page - 1) * pagination.pageSize + cellProps.row.index + 1;
+        },
+        enableColumnFilter: false,
+      },
+      {
         header: 'Nama',
         accessorKey: 'name',
         enableColumnFilter: false,
@@ -179,7 +187,7 @@ const ListUser = () => {
         }
       },
     ],
-    []
+    [ pagination ]
   );
 
   return (
