@@ -1,7 +1,5 @@
 import { useState, useCallback } from 'react';
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_APP_DATABASEURL;
+import api from '../api/axios';
 
 const useReport = () => {
   const [loading, setLoading] = useState(false);
@@ -10,17 +8,8 @@ const useReport = () => {
   const getDashboardStats = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const auth = localStorage.getItem('auth');
-    const token = auth ? JSON.parse(auth).token : null;
-    //console.log(token);
     try {
-      const response = await axios.get(`${API_URL}/dashboard-stats`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await api.get('/dashboard-stats');
       return response.data;
     } catch (err) {
       setError(err.response?.data?.message || err.message);
@@ -33,17 +22,8 @@ const useReport = () => {
   const getReportPerProvince = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const auth = localStorage.getItem('auth');
-    const token = auth ? JSON.parse(auth).token : null;
-    //console.log(token);
     try {
-      const response = await axios.get(`${API_URL}/report-perprovince`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await api.get('/report-perprovince');
       return response.data;
     } catch (err) {
       setError(err.response?.data?.message || err.message);
@@ -56,17 +36,8 @@ const useReport = () => {
   const getReportPerUser = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const auth = localStorage.getItem('auth');
-    const token = auth ? JSON.parse(auth).token : null;
-    //console.log(token);
     try {
-      const response = await axios.get(`${API_URL}/report-peruser`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await api.get('/report-peruser');
       return response.data;
     } catch (err) {
       setError(err.response?.data?.message || err.message);

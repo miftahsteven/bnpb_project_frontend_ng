@@ -1,10 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { apiUrl } from '../lib/env';
-// /Users/miftahsyarief/MyLab/mrb-ng/src/hooks/useProvinse.js
-//ambil config dari lib/env.js
-
-
-const API_URL = apiUrl('locations/provinces');
+import api from '../api/axios';
 
 /**
  * Hook untuk mengambil data provinsi untuk select box.
@@ -31,22 +26,21 @@ export default function useProvinse() {
         setError("");
 
         try {
-            const res = await fetch(API_URL, { signal: abortRef.current.signal });
-            if (!res.ok) {
-                throw new Error(`Gagal memuat provinsi (${res.status})`);
-            }
-            const data = await res.json();
+            const res = await api.get('/locations/provinces', { signal: abortRef.current.signal });
+            const data = res.data;
 
             // Normalisasi: pastikan array
             const list = Array.isArray(data) ? data : data?.data ?? [];
             setProvinces(list);
         } catch (err) {
-            if (err.name !== "AbortError") {
+            if (err.name !== "AbortError" && !axios.isCancel(err)) {
                 setError(err.message || "Terjadi kesalahan saat memuat provinsi");
                 setProvinces([]);
             }
         } finally {
-            setLoading(false);
+            if (!abortRef.current?.signal.aborted) {
+                 setLoading(false);
+            }
         }
     };
 
