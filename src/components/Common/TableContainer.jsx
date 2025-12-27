@@ -276,11 +276,23 @@ const TableContainer = ({
                       <i className="mdi mdi-chevron-left"></i>
                     </Link>
                   </li>
-                  {getPageOptions().map((item, key) => (
-                    <li key={key} className={`paginate_button page-item ${getState().pagination.pageIndex === item ? "active" : ""}`}>
-                      <Link to="#" className="page-link" onClick={() => setPageIndex(item)}>{item + 1}</Link>
-                    </li>
-                  ))}
+                  {(() => {
+                    const totalPages = table.getPageCount();
+                    const pageIndex = getState().pagination.pageIndex;
+                    const maxVisible = 5;
+                    let start = Math.max(0, pageIndex - 2);
+                    let end = Math.min(totalPages, start + maxVisible);
+
+                    if (end - start < maxVisible) {
+                      start = Math.max(0, end - maxVisible);
+                    }
+
+                    return getPageOptions().slice(start, end).map((item, key) => (
+                      <li key={key} className={`paginate_button page-item ${getState().pagination.pageIndex === item ? "active" : ""}`}>
+                        <Link to="#" className="page-link" onClick={() => setPageIndex(item)}>{item + 1}</Link>
+                      </li>
+                    ));
+                  })()}
                   <li className={`paginate_button page-item next ${!getCanNextPage() ? "disabled" : ""}`}>
                     <Link to="#" className="page-link" onClick={nextPage}>
                       <i className="mdi mdi-chevron-right"></i>
