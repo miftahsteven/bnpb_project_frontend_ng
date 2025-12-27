@@ -17,32 +17,40 @@ const useUser = () => {
   const authData = localStorage.getItem("auth");
   const token = authData ? JSON.parse(authData).token : null;
 
-  const fetchUsers = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await fetch(`${BASE_URL}/users?page=${pagination.page}&pageSize=${pagination.pageSize}`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      if (!response.ok) throw new Error('Failed to fetch users');
-      const result = await response.json();
-      setUsers(Array.isArray(result) ? result : (result.data || []));
-      setPagination({
-        page: result.page,
-        pageSize: result.pageSize,
-        total: result.total,
-      });
+  const fetchUsers = useCallback(async (page = 1, pageSize = 10, filters = {}) => {
+      setLoading(true);
       setError(null);
-    } catch (err) {
-      setError(err.message || 'Failed to fetch users');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [token, pagination]);
+      try {
+        const authData = localStorage.getItem("auth");
+        const token = authData ? JSON.parse(authData).token : null;
+        
+        const queryParams = new URLSearchParams({
+          page,
+          pageSize,
+          ...filters
+        });
+  
+        const response = await fetch(`${BASE_URL}/users-crud?${queryParams.toString()}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (!response.ok) throw new Error('Failed to fetch users data');
+        
+        const result = await response.json();
+        setUsers(result.data || []);
+        setPagination(prev => ({
+          ...prev,
+          page,
+          pageSize,
+          total: result.total || (result.data ? result.data.length : 0)
+        }));
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }, []);
 
   const getUser = useCallback(async (id) => {
     setLoading(true);

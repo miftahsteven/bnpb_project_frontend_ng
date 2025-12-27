@@ -18,6 +18,10 @@ const { Title } = Typography;
 const ListUser = () => {
   const { users, loading, createUser, updateUser, deleteUser, fetchUsers, error, fetchSatuanKerja, satuanKerja, pagination, setPagination } = useUser();
   
+  const data = useMemo(() => {
+          return users || [];
+      }, [users]);
+  
   
   // Modal States
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -185,7 +189,7 @@ const ListUser = () => {
       <Card>
         <TableContainer
           columns={columns}
-          data={users || []}
+          data={data || []}
           isGlobalFilter={true}
           globalFilterValue={searchTerm}
           onGlobalFilterChangeProp={setSearchTerm}
