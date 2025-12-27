@@ -8,11 +8,11 @@ const useRambu = () => {
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
     page: 1,
-    pageSize: 20,
+    pageSize: 100,
     total: 0,
   });
 
-  const fetchRambu = useCallback(async (page = 1, pageSize = 20, filters = {}) => {
+  const fetchRambu = useCallback(async (page = 1, pageSize = 100, filters = {}) => {
     setLoading(true);
     setError(null);
     try {

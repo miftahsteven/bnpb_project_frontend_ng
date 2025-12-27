@@ -11,7 +11,7 @@ import { useFormik } from "formik";
 import { login } from "../../api/auth";
 
 // import images
-import logoDark from "../../assets/images/logo-dark.png";
+import logoDark from "../../assets/images/logo_BNPB.png";
 import logoLight from "../../assets/images/logo-light.png";
 import CarouselPage from "./CarouselPage";
 
@@ -53,7 +53,7 @@ const Login2 = () => {
           role: res.user?.role ?? null,
         }));
         // redirect ke halaman utama (ubah jika perlu)
-        window.location.href = '/dashboard';
+        window.location.href = '/dashboard-fullmap';
       } catch (e) {
         setError("Login gagal. Periksa username/kata sandi.");
       }
@@ -72,12 +72,12 @@ const Login2 = () => {
                   <div className="d-flex flex-column h-100">
                     <div className="mb-4 mb-md-5">
                       <Link to="/" className="d-block auth-logo">
-                        <img
+                        {/* <img
                           src={logoDark}
                           alt=""
-                          height="18"
+                          height="80"
                           className="auth-logo-dark"
-                        />
+                        /> */}
                         {/* <img
                           src={logoLight}
                           alt=""
@@ -85,7 +85,7 @@ const Login2 = () => {
                           className="auth-logo-light"
                         /> */}
                         {/* berikan label "Badan nasional penanggulangan bencana, berwarna #00499e" */}
-                        <div style={{ color: 'white', fontWeight: 'bold', fontSize: '18px' }}>
+                        <div style={{ color: '#00499e', fontWeight: 'bold', fontSize: '18px' }}>
                           Badan Nasional Penanggulangan Bencana
                         </div>
                       </Link>

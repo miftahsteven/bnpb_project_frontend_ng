@@ -5,7 +5,7 @@ import Login2 from "../pages/AuthenticationInner/Login2";
 import Dashboard from "../pages/Dashboard/index";
 import ForgetPwd from "../pages/Authentication/ForgetPassword";
 //import DatatableTables from "../pages/Tables/DatatableTables"; 
-import ListRambu from "../pages/Tables/ListRambu";
+import ListRambu from "../pages/Rambu/ListRambu";
 
 //FULL MAP
 import FullMap from "../pages/Full-Map/index";
