@@ -8,11 +8,11 @@ const useRambu = () => {
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
     page: 1,
-    pageSize: 100,
+    pageSize: 10,
     total: 0,
   });
 
-  const fetchRambu = useCallback(async (page = 1, pageSize = 100, filters = {}) => {
+  const fetchRambu = useCallback(async (page = 1, pageSize = 10, filters = {}) => {
     setLoading(true);
     setError(null);
     try {
@@ -47,6 +47,34 @@ const useRambu = () => {
     }
   }, []);
 
+  const fetchAllRambu = useCallback(async (filters = {}) => {
+    try {
+        const authData = localStorage.getItem("auth");
+        const token = authData ? JSON.parse(authData).token : null;
+        
+        // Use a large pageSize to get all data (or handle recursive paging if needed)
+        // For now, assuming 10000 is enough or backend handles 'all'
+        const queryParams = new URLSearchParams({
+          page: 1,
+          pageSize: 10000, 
+          ...filters
+        });
+  
+        const response = await fetch(`${BASE_URL}/rambu-crud?${queryParams.toString()}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (!response.ok) throw new Error('Failed to fetch filter data');
+        
+        const result = await response.json();
+        return result.data || [];
+    } catch (err) {
+        console.error(err);
+        return [];
+    }
+  }, []);
+
   const detailRambu = useCallback(async (id) => {
     setLoading(true);
     setError(null);
@@ -63,6 +91,30 @@ const useRambu = () => {
       
       const result = await response.json();
       return result.data;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const getRambuForEdit = useCallback(async (id) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const authData = localStorage.getItem("auth");
+      const token = authData ? JSON.parse(authData).token : null;
+      
+      const response = await fetch(`${BASE_URL}/rambu/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch Rambu data');
+      
+      const result = await response.json();
+      return result;
     } catch (err) {
       setError(err.message);
       throw err;
@@ -187,6 +239,29 @@ const useRambu = () => {
     }
   };
 
+  const updateRambuStatus = async (id, status) => {
+    setLoading(true);
+    try {
+      const authData = localStorage.getItem("auth");
+      const token = authData ? JSON.parse(authData).token : null;
+      const response = await fetch(`${BASE_URL}/rambu-status/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ status }),
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.ok) throw new Error('Failed to update Rambu status');
+      await fetchRambu(pagination.page, pagination.pageSize);
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchRambu(pagination.page, pagination.pageSize);
   }, [fetchRambu, pagination.page, pagination.pageSize]);
@@ -203,6 +278,10 @@ const useRambu = () => {
     deleteRambu,
     detailRambu,
     deleteTrashRambu,
+    deleteTrashRambu,
+    getRambuForEdit,
+    updateRambuStatus,
+    fetchAllRambu
   };
 };
 

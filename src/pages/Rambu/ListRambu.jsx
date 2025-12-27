@@ -12,19 +12,43 @@ import { useOptions, useCategories, useDisasterTypes, useModels, useCostSources 
 import useGeografis from '../../hooks/useGeografis';
 import maplibregl from "maplibre-gl";
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { toast } from "react-toastify"
+import * as XLSX from "xlsx";
 
 const MAPTILER_KEY = import.meta.env.VITE_APP_API_MAPTILER;
 const styleUrl = `https://api.maptiler.com/maps/streets-v4/style.json?key=${MAPTILER_KEY}`;
 
 const ListRambu = () => {
-    const { data: rawData, loading, error, createRambu, updateRambu, deleteRambu, detailRambu, pagination, setPagination, fetchRambu, deleteTrashRambu } = useRambu();
+    const { data: rawData, loading, error, createRambu, updateRambu, deleteRambu, detailRambu, pagination, setPagination, fetchRambu, deleteTrashRambu, getRambuForEdit, updateRambuStatus, fetchAllRambu } = useRambu();
     const { getGeografis } = useGeografis();
 
     const data = useMemo(() => {
-        return (rawData || []).filter(item => item.status !== 'trash');
+        return rawData || [];
     }, [rawData]);
-    
-    // Filter State
+
+    // Pagination State for Table
+    const paginationState = useMemo(() => {
+      return {
+        pageIndex: pagination.page - 1,
+        pageSize: pagination.pageSize,
+      };
+    }, [pagination.page, pagination.pageSize]);
+
+    const pageCount = Math.ceil(pagination.total / pagination.pageSize);
+
+    const handlePaginationChange = (updater) => {
+      setPagination(prev => {
+        const newPagination = typeof updater === 'function'
+          ? updater({ pageIndex: prev.page - 1, pageSize: prev.pageSize })
+          : updater;
+
+        return {
+          ...prev,
+          page: newPagination.pageIndex + 1,
+          pageSize: newPagination.pageSize
+        };
+      });
+    };
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [filterValues, setFilterValues] = useState({
         prov_id: '',
@@ -35,6 +59,14 @@ const ListRambu = () => {
         disasterTypeId: '',
         status: ''
     });
+    const [searchTerm, setSearchTerm] = useState('');
+
+    // Fetch on search change (Debounced by TableContainer)
+    useEffect(() => {
+        if (searchTerm !== undefined) {
+             fetchRambu(1, pagination.pageSize, { ...filterValues, search: searchTerm });
+        }
+    }, [searchTerm]);
 
     // Add Form State
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -125,6 +157,7 @@ const ListRambu = () => {
     const [existingPhotos, setExistingPhotos] = useState([]); // Existing photos from DB
     const [deletePhotoIds, setDeletePhotoIds] = useState([]); // IDs to delete
     const [pendingEditLocation, setPendingEditLocation] = useState(null);
+    const [initialEditValues, setInitialEditValues] = useState({ lat: '', lng: '' });
 
     // Filter Options
     const { provOptions, cityOptions, districtOptions, subdistrictOptions } = useOptions({ 
@@ -185,7 +218,7 @@ const ListRambu = () => {
     };
 
     const applyFilters = () => {
-        fetchRambu(1, pagination.pageSize, filterValues);
+        fetchRambu(1, pagination.pageSize, { ...filterValues, search: searchTerm });
         setIsFilterModalOpen(false);
     };
 
@@ -199,6 +232,7 @@ const ListRambu = () => {
             disasterTypeId: '',
             status: ''
         });
+        setSearchTerm('');
         fetchRambu(1, pagination.pageSize, {});
         setIsFilterModalOpen(false);
     };
@@ -232,6 +266,19 @@ const ListRambu = () => {
         e.target.value = null; // Reset input
     };
 
+    //handle change status
+    const handleChangeStatus = async (id, status) => {
+        try {
+            await updateRambuStatus(id, status);
+            fetchRambu(pagination.page, pagination.pageSize);
+            // berikan informasi dengan hint message bahwa status berhasil diubah
+            //toast.success("Status berhasil diubah");
+            toast.success("Status berhasil diubah", { autoClose: 2000 });
+        } catch (err) {
+            console.error("Error updating Rambu status:", err);
+            toast.error("Gagal mengubah status", { autoClose: 2000 });
+        }
+    };
 
 
     // Auto-fill Location Effect
@@ -421,12 +468,13 @@ const ListRambu = () => {
         setCurrentRambuId(id);
         setIsEditModalOpen(true);
         try {
-            const detail = await detailRambu(id);
+            const detail = await getRambuForEdit(id);
+            //console.log("Detail", JSON.stringify(detail));
             if(detail) {
                 // Map detail to form
                 setEditForm({
                     categoryId: detail.categoryId || '',
-                    description: detail.description || '',
+                    description: detail.description || '',  
                     lat: detail.lat || '',
                     lng: detail.lng || '',
                     prov_id: detail.prov_id || '',
@@ -449,6 +497,10 @@ const ListRambu = () => {
                 setExistingPhotos(detail.photos || []);
                 setEditFiles([]);
                 setDeletePhotoIds([]);
+                setInitialEditValues({
+                    lat: detail.lat || '',
+                    lng: detail.lng || ''
+                });
             }
         } catch(e) {
             console.error(e);
@@ -598,6 +650,12 @@ const ListRambu = () => {
     // Edit Auto-Fill Location
     useEffect(() => {
         const { lat, lng } = editForm;
+
+        // Skip if values match initial DB values (prevent auto-overwrite on load)
+        if (lat === initialEditValues.lat && lng === initialEditValues.lng) {
+            return;
+        }
+
         // Only auto-fill if lat/lng changed AND we are editing (modal open)
         // We need to avoid overwriting existing data on initial load.
         // `pendingEditLocation` approach?
@@ -627,7 +685,107 @@ const ListRambu = () => {
              }, 1000);
              return () => clearTimeout(timer);
         }
-    }, [editForm.lat, editForm.lng, isEditModalOpen, getGeografis, editProvOptions]);
+    }, [editForm.lat, editForm.lng, isEditModalOpen, getGeografis, editProvOptions, initialEditValues]);
+
+    //handle export to excel, download excel with or without filter
+    const handleExportToExcel = async () => {
+        try {
+            // 1. Fetch ALL data (IDs) based on current filters (if any)
+            // Assuming we want to export what's currently "filtered" but ALL pages.
+            // If filters are active (search, category, etc.), pass them.
+            // Currently `filters` state is not fully exposed here, but `useRambu` uses `queryParams`.
+            // We need to pass the SAME filters as the table.
+            
+            // We need to capture the current filters.
+            // The table uses `columnFilters` and `globalFilter`.
+            // Server-side filtering in `fetchRambu` accepts a `filters` object.
+            // But `fetchRambu` is called inside `useEffect` or `handlePaginationChange`.
+            // `ListRambu` doesn't seem to store the *current* filter object in a single state variable efficiently accessible here, 
+            // except maybe we can assume exporting *everything* if no complex filter logic is easily matching.
+            // However, `fetchAllRambu` accepts filters.
+            
+            // Simplified: Just export ALL for now, or assume filters are passed if available.
+            // If user wants filtered export, we'd need to lift filter state. 
+            // Let's assume export ALL for now as requested "menampilkan semua field data", 
+            // or we use the `filters` from `handleFilterSubmit` if you have one?
+            // `handlePaginationChange` uses `setPagination`.
+            
+            // Let's just fetch ALL active rambu (status != trash maybe?).
+            // `fetchAllRambu` defaults to all.
+            
+            
+            const toastId = toast.loading("Sedang mengambil data...");
+            
+            const allList = await fetchAllRambu({ ...filterValues, search: searchTerm }); // Pass current filters and search
+            
+            if (!allList || allList.length === 0) {
+                toast.update(toastId, { render: "Tidak ada data untuk diexport", type: "warning", isLoading: false, autoClose: 3000 });
+                return;
+            }
+
+            toast.update(toastId, { render: `Mengunduh detail untuk ${allList.length} data...`, type: "info", isLoading: true });
+
+            // 2. Fetch DETAILS for each item
+            // Using Promise.all with concurrency limit? 
+            // For simplicity, Promise.all (might be heavy if 1000 items). 
+            // Let's do batches of 10 or 20.
+            
+            const detailData = [];
+            const chunkSize = 5; // Conservative chunk size
+            for (let i = 0; i < allList.length; i += chunkSize) {
+                const chunk = allList.slice(i, i + chunkSize);
+                const chunkResults = await Promise.all(
+                    chunk.map(async (item) => {
+                         try {
+                             return await detailRambu(item.id);
+                         } catch (e) {
+                             console.error(`Failed to export item ${item.id}`, e);
+                             return null;
+                         }
+                    })
+                );
+                detailData.push(...chunkResults.filter(r => r !== null));
+                
+                // Optional progress update
+                // toast.update(toastId, { render: `Mengunduh... ${Math.min(i + chunkSize, allList.length)} / ${allList.length}` });
+            }
+
+            // 3. Format for Excel
+            const exportSheet = detailData.map(item => ({
+                'ID': item.id,
+                'Nama': item.name,
+                'Deskripsi': item.description,
+                'Status': item.status,
+                'Kategori': item.categoryName,
+                'Jenis Bencana': item.disasterTypeName,
+                'Provinsi': item.provinceName,
+                'Kota/Kab': item.cityName,
+                'Kecamatan': item.districtName,
+                'Kelurahan/Desa': item.subdistrictName,
+                'Latitude': item.lat,
+                'Longitude': item.lng,
+                'Model': item.model,
+                'Sumber Dana': item.costsource,
+                'Tahun': item.year,
+                'Simulasi': item.isSimulation ? 'Ya' : 'Tidak',
+                'Tanggal Input': new Date(item.createdAt).toLocaleDateString('id-ID'),
+                // Add more fields if needed
+            }));
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(exportSheet);
+            XLSX.utils.book_append_sheet(wb, ws, "Data Rambu");
+            
+            XLSX.writeFile(wb, "Data_Rambu_Detail.xlsx");
+            
+            toast.update(toastId, { render: "Export berhasil!", type: "success", isLoading: false, autoClose: 3000 });
+
+        } catch (e) {
+            console.error(e);
+            toast.dismiss();
+            toast.error("Gagal melakukan export excel");
+        }
+    };
 
     // Pending Edit Location Processor (Chain)
     useEffect(() => {
@@ -736,7 +894,7 @@ const ListRambu = () => {
                   return (
                     <select
                       value={item.status || 'draft'}
-                      onChange={(e) => updateRambu(item.id, { ...item, status: e.target.value })}
+                      onChange={(e) => handleChangeStatus(item.id, e.target.value)}
                       className={`text-xs font-semibold py-1 px-2 rounded-full border cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${getStatusColor(item.status)}`}
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -748,6 +906,18 @@ const ListRambu = () => {
                     </select>
                   );
                 }
+            },
+            {
+                header: "Tanggal Input",
+                accessorKey: "createdAt",
+                enableColumnFilter: false,
+                cell: (cellProps) => (
+                    <div className="w-28 whitespace-normal break-words text-sm" title={cellProps.getValue()}>
+                        {/* {cellProps.getValue()} */}
+                        {/* buat DD-MM-YYYY */}
+                        {new Date(cellProps.getValue()).toLocaleDateString('id-ID')}
+                    </div>
+                )
             },
             {
                 header: "Aksi",
@@ -794,11 +964,21 @@ const ListRambu = () => {
                     columns={columns}
                     data={data || []}
                     isGlobalFilter={true}
+                    globalFilterValue={searchTerm}
+                    onGlobalFilterChangeProp={setSearchTerm}
                     isPagination={true}
                     SearchPlaceholder="Cari rambu..."
-                    pagination="pagination"
+                    // pagination="pagination" // Keeping this or removing if it causes duplicates, likely a className
                     paginationWrapper='dataTables_paginate paging_simple_numbers'
+                    isCustomPageSize={true}
+                    manualPagination={true}
+                    pageCount={pageCount}
+                    totalRows={pagination.total}
+                    paginationState={paginationState}
+                    onPaginationChange={handlePaginationChange}
                     tableClass="table align-middle table-nowrap table-hover"
+                    // buatkan table dengan height yang tidak perlu scroll kebawah, buatkan scroll vertical didalam table
+                    divStyle={{ maxHeight: '400px', overflowY: 'auto' }}
                     theadClass="table-light"
                     loading={loading}
                     error={error}                    
@@ -808,7 +988,7 @@ const ListRambu = () => {
                              <Button color="primary" outline onClick={() => setIsFilterModalOpen(true)} className="d-flex align-items-center gap-2">
                                  <Filter size={16} /> Filter
                              </Button>
-                             <Button color="success" outline className="d-flex align-items-center gap-2">
+                             <Button color="success" outline className="d-flex align-items-center gap-2" onClick={handleExportToExcel}>
                                  <FileSpreadsheet size={16} /> Export Excel
                              </Button>
                              <Button color="primary" className="d-flex align-items-center gap-2" onClick={() => setIsAddModalOpen(true)}>
@@ -1248,16 +1428,16 @@ const ListRambu = () => {
                     <ModalBody>
                         <div className="d-flex justify-content-center gap-3 my-3">
                             <Button color="danger" size="md" onClick={() => handleConfirmDelete('permanent')}>
-                                <i className="fas fa-trash me-1"></i> Hapus Selamanya
+                                <i className="fas fa-trash me-1"></i> Hapus 
                             </Button>
                             <Button color="warning" size="md" className="text-white" onClick={() => handleConfirmDelete('trash')}>
-                                <i className="fas fa-trash-restore me-1"></i> Ke Tempat Sampah
+                                <i className="fas fa-trash-restore me-1"></i> Archived
                             </Button>
                         </div>
                     </ModalBody>
                     <ModalFooter className="flex-column align-items-start bg-light text-muted small">
                         <div><i className="fas fa-info-circle me-1"></i> Data yang terhapus selamanya <b>tidak bisa</b> dimunculkan lagi di kemudian hari.</div>
-                        <div><i className="fas fa-archive me-1"></i> Data yang dimasukan ke dalam tempat sampah/archived dapat dilihat di menu Trash.</div>
+                        <div><i className="fas fa-archive me-1"></i> Data yang dimasukan ke dalam archived dapat dilihat di menu Archive.</div>
                     </ModalFooter>
                 </Modal>
             </div>

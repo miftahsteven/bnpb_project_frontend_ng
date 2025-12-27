@@ -71,6 +71,7 @@ const TableContainer = ({
   tableClass,
   theadClass,
   divClassName,
+  divStyle, // New prop for container style
   isBordered,
   isPagination,
   isGlobalFilter,
@@ -83,11 +84,21 @@ const TableContainer = ({
   isCustomPageSize,
   handleUserClick,
   isJobListGlobalFilter,
-  customToolbar
+  customToolbar,
+  manualPagination = false,
+  pageCount = -1,
+  totalRows = 0,
+  paginationState,
+  onPaginationChange,
+  globalFilterValue, // Controlled state
+  onGlobalFilterChangeProp // Controlled handler
 }) => {
 
   const [columnFilters, setColumnFilters] = useState([]);
-  const [globalFilter, setGlobalFilter] = useState('');
+  const [internalGlobalFilter, setInternalGlobalFilter] = useState('');
+
+  const globalFilter = globalFilterValue !== undefined ? globalFilterValue : internalGlobalFilter;
+  const setGlobalFilter = onGlobalFilterChangeProp !== undefined ? onGlobalFilterChangeProp : setInternalGlobalFilter;
 
   const fuzzyFilter = (row, columnId, value, addMeta) => {
     const itemRank = rankItem(row.getValue(columnId), value);
@@ -103,12 +114,16 @@ const TableContainer = ({
     filterFns: {
       fuzzy: fuzzyFilter,
     },
+    pageCount,
+    manualPagination,
     state: {
       columnFilters,
       globalFilter,
+      ...(manualPagination && paginationState ? { pagination: paginationState } : {})
     },
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
+    ...(manualPagination && onPaginationChange ? { onPaginationChange } : {}),
     globalFilterFn: fuzzyFilter,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -173,14 +188,14 @@ const TableContainer = ({
         {customToolbar && <Col className="text-sm-end">{customToolbar}</Col>}
       </Row>
 
-      <div className={divClassName ? divClassName : "table-responsive"}>
+      <div className={divClassName ? divClassName : "table-responsive"} style={divStyle}>
         <Table hover className={tableClass} bordered={isBordered}>
           <thead className={theadClass}>
             {getHeaderGroups().map(headerGroup => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map(header => {
                   return (
-                    <th key={header.id} colSpan={header.colSpan} className={`${header.column.columnDef.enableSorting ? "sorting sorting_desc" : ""}`}>
+                    <th key={header.id} colSpan={header.colSpan} className={`${header.column.columnDef.enableSorting ? "sorting sorting_desc" : ""}`} style={{ position: 'sticky', top: 0, zIndex: 1, backgroundColor: '#eff2f7' }}>
                       {header.isPlaceholder ? null : (
                         <React.Fragment>
                           <div
@@ -242,13 +257,20 @@ const TableContainer = ({
         isPagination && (
           <Row>
             <Col sm={12} md={5}>
-              <div className="dataTables_info">Showing {getState().pagination.pageSize} of {data.length} Results</div>
+              <div className="dataTables_info">Menampilkan {getState().pagination.pageSize} dari {manualPagination ? totalRows : data.length} Data</div>
             </Col>
             <Col sm={12} md={7}>
               <div className={paginationWrapper}>
                 <ul className={pagination}>
                   <li className={`paginate_button page-item previous ${!getCanPreviousPage() ? "disabled" : ""}`}>
-                    <Link to="#" className="page-link" onClick={previousPage}><i className="mdi mdi-chevron-left"></i></Link>
+                    <Link to="#" className="page-link" onClick={() => setPageIndex(0)}>
+                      <i className="mdi mdi-chevron-double-left"></i>
+                    </Link>
+                  </li>
+                  <li className={`paginate_button page-item previous ${!getCanPreviousPage() ? "disabled" : ""}`}>
+                    <Link to="#" className="page-link" onClick={previousPage}>
+                      <i className="mdi mdi-chevron-left"></i>
+                    </Link>
                   </li>
                   {getPageOptions().map((item, key) => (
                     <li key={key} className={`paginate_button page-item ${getState().pagination.pageIndex === item ? "active" : ""}`}>
@@ -256,7 +278,14 @@ const TableContainer = ({
                     </li>
                   ))}
                   <li className={`paginate_button page-item next ${!getCanNextPage() ? "disabled" : ""}`}>
-                    <Link to="#" className="page-link" onClick={nextPage}><i className="mdi mdi-chevron-right"></i></Link>
+                    <Link to="#" className="page-link" onClick={nextPage}>
+                      <i className="mdi mdi-chevron-right"></i>
+                    </Link>
+                  </li>
+                  <li className={`paginate_button page-item next ${!getCanNextPage() ? "disabled" : ""}`}>
+                    <Link to="#" className="page-link" onClick={() => setPageIndex(table.getPageCount() - 1)}>
+                      <i className="mdi mdi-chevron-double-right"></i>
+                    </Link>
                   </li>
                 </ul>
               </div>
@@ -266,6 +295,10 @@ const TableContainer = ({
       }
     </Fragment>
   );
+};
+
+TableContainer.defaultProps = {
+  pagination: "pagination justify-content-end mb-2 gap-1"
 };
 
 export default TableContainer;
