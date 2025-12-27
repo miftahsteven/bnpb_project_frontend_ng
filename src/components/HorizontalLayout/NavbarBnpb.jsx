@@ -33,6 +33,7 @@ const Navbar = (props) => {
   const [invoice, setinvoice] = useState(false);
   const [auth, setauth] = useState(false);
   const [utility, setutility] = useState(false);
+  const [role, setrole] = useState(false);
 
   useEffect(() => {
     var matchingMenuItem = null;
@@ -49,6 +50,16 @@ const Navbar = (props) => {
       activateParentDropdown(matchingMenuItem);
     }
   });
+
+  useEffect(() => {
+      const auth = JSON.parse(localStorage.getItem("auth"));
+      if (auth) {
+        setauth(true);
+        setrole(auth.role);
+      } else {
+        setauth(false);
+      }
+  }, []);
 
   const removeActivation = (items) => {
     for (var i = 0; i < items.length; ++i) {
@@ -174,7 +185,7 @@ const Navbar = (props) => {
 
                   </div>
                 </li>
-
+                { role == 1 && (
                 <li className="nav-item dropdown">
                   <Link
                     className="nav-link  arrow-none"
@@ -195,11 +206,9 @@ const Navbar = (props) => {
                     <Link to="/satker" className="dropdown-item">
                       {props.t("Satuan Kerja")}
                     </Link>
-
-
-
                   </div>
                 </li>
+                )}
               </ul>
             </Collapse>
           </nav>
