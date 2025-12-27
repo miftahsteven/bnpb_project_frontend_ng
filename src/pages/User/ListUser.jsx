@@ -16,11 +16,11 @@ import Breadcrumbs from '../../components/Common/Breadcrumb';
 const { Title } = Typography;
 
 const ListUser = () => {
-  const { users, loading, createUser, updateUser, deleteUser, fetchUsers, error, fetchSatuanKerja, satuanKerja, pagination, setPagination } = useUser();
+  const { users: rawData, loading, createUser, updateUser, deleteUser, fetchUsers, error, fetchSatuanKerja, satuanKerja, pagination, setPagination } = useUser();
   
   const data = useMemo(() => {
-          return users || [];
-      }, [users]);
+          return rawData || [];
+      }, [rawData]);
   
   
   // Modal States
