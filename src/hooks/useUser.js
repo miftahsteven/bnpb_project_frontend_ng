@@ -107,8 +107,7 @@ const useUser = () => {
       const response = await fetch(`${BASE_URL}/users/${id}`, {
         method: 'DELETE',
         headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,          
         },
       });
       if (!response.ok) throw new Error('Failed to delete user');
