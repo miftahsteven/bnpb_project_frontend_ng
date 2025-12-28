@@ -18,8 +18,14 @@ const useRambu = () => {
       const params = {
         page,
         pageSize,
+        status: ["draft", "published", "rusak", "hilang"],
         ...filters
       };
+
+      // Ensure status is sent as comma-separated string for backend compatibility
+      if (Array.isArray(params.status)) {
+          params.status = params.status.join(',');
+      }
 
       const response = await api.get('/rambu-crud', { params });
       
