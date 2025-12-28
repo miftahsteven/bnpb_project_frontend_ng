@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import ReCAPTCHA from "react-google-recaptcha";
 import { useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
 import { layoutWidthTypes } from "../../constants/layout";
@@ -18,6 +19,8 @@ import CarouselPage from "./CarouselPage";
 const Login2 = () => {
   const [passwordShow, setPasswordShow] = useState(false);
   const [error, setError] = useState("");
+  const [captchaVal, setCaptchaVal] = useState(null);
+  const [captchaError, setCaptchaError] = useState("");
 
   //meta title
   document.title = "Login | Manajemen Rambu Bencana BNPB";
@@ -43,6 +46,13 @@ const Login2 = () => {
     onSubmit: async (values) => {
       //alert(JSON.stringify(values, null, 2));
       setError("");
+      setCaptchaError("");
+      
+      if (!captchaVal) {
+          setCaptchaError("Silahkan centang captcha terlebih dahulu.");
+          return;
+      }
+
       try {
         const res = await login(values);
         // simpan token & user ke localStorage
@@ -154,24 +164,20 @@ const Login2 = () => {
                             ) : null}
                           </div>
 
-                          <div className="form-check">
-                            <Input
-                              type="checkbox"
-                              className="form-check-input"
-                              id="auth-remember-check"
-                            />
-                            <label
-                              className="form-check-label"
-                              htmlFor="auth-remember-check"
-                            >
-                              Ingat saya
-                            </label>
+                          <div className="mt-3 mb-3">
+                              <ReCAPTCHA
+                                sitekey={import.meta.env.VITE_APP_RECAPTCHA_SITE_KEY || "6Ldl_zgsAAAAAPKxTPBX5i2eDc3eetMZRvBXSfx-"}
+                                onChange={(val) => setCaptchaVal(val)}
+                              />
+                              {captchaError && <div className="text-danger mt-1">{captchaError}</div>}
                           </div>
 
                           <div className="mt-3 d-grid">
                             <button
-                              className="btn btn-primary btn-block "
+                              className="btn btn-primary btn-block"
                               type="submit"
+                              disabled={!captchaVal}
+                              style={{ cursor: !captchaVal ? 'not-allowed' : 'pointer', opacity: !captchaVal ? 0.6 : 1 }}
                             >
                               Masuk
                             </button>
