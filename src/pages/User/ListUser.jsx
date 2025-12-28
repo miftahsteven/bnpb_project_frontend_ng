@@ -7,7 +7,7 @@ import {
 } from 'antd';
 import { 
   PlusOutlined, EditOutlined, 
-  DeleteOutlined, EyeOutlined, ExclamationCircleOutlined 
+  DeleteOutlined, EyeOutlined, ExclamationCircleOutlined, CloseOutlined
 } from '@ant-design/icons';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Label, Input, Row, Col } from 'reactstrap';
 import TableContainer from '../../components/Common/TableContainer';
@@ -237,6 +237,8 @@ const ListUser = () => {
                 onConfirm={() => handleDelete(record.id)}
                 okText="Ya, Hapus"
                 cancelText="Batal"
+                cancelIcon={<CloseOutlined />}
+                cancelButtonProps={{ style: { backgroundColor: 'red', color: 'white' } }}
                 icon={<ExclamationCircleOutlined style={{ color: 'red' }} />}
               >
                 <Button danger icon={<DeleteOutlined />} />

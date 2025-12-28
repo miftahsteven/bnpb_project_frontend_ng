@@ -5,7 +5,6 @@ const baseURL = import.meta.env.VITE_APP_DATABASEURL || 'http://localhost:8044/a
 
 const api = axios.create({
     baseURL,
-    headers: { 'Content-Type': 'application/json' },
 });
 
 // sisipkan Authorization dari localStorage
