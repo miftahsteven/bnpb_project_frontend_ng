@@ -62,6 +62,7 @@
     "react-dropzone": "^14.3.8",
     "react-dual-listbox": "^6.0.3",
     "react-flatpickr": "^4.0.11",
+    "react-google-recaptcha": "^3.1.0",
     "react-i18next": "^16.3.3",
     "react-imask": "^7.6.1",
     "react-jvectormap": "^0.0.16",
