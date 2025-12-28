@@ -167,9 +167,7 @@ const useRambu = () => {
     }
   };
 
-  useEffect(() => {
-    fetchRambu(pagination.page, pagination.pageSize);
-  }, [fetchRambu, pagination.page, pagination.pageSize]);
+
 
   return {
     data,

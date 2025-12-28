@@ -68,6 +68,11 @@ const ListRambu = () => {
         }
     }, [searchTerm]);
 
+    // Fetch on pagination change
+    useEffect(() => {
+        fetchRambu(pagination.page, pagination.pageSize, { ...filterValues, search: searchTerm });
+    }, [pagination.page, pagination.pageSize]);
+
     // Add Form State
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [addForm, setAddForm] = useState({

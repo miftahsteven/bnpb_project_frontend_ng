@@ -68,6 +68,11 @@ const ListRambu = () => {
         }
     }, [searchTerm]);
 
+    // Fetch on pagination change
+    useEffect(() => {
+        fetchRambu(pagination.page, pagination.pageSize, { ...filterValues, search: searchTerm, status: 'trash' });
+    }, [pagination.page, pagination.pageSize]);
+
     // Add Form State
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [addForm, setAddForm] = useState({
@@ -198,7 +203,7 @@ const ListRambu = () => {
     const { options: modelOptions } = useModels();
     const { options: costSourceOptions } = useCostSources();
 
-    const statusOptions = ['draft', 'published', 'rusak', 'hilang'];
+    const statusOptions = ['draft', 'published', 'rusak', 'hilang', 'trash'];
     
     // Year Options (2 years ago to 1 year ahead)
     const currentYear = new Date().getFullYear();
@@ -932,9 +937,9 @@ const ListRambu = () => {
                             <button title="Detail" className="transition-colors bg-transparent border-0" onClick={() => handleDetailClick(cellProps.row.original.id)}>
                                 <i className="fas fa-info-circle text-lg text-primary hover:text-warning-600"></i>
                             </button>
-                            <button title="Edit" className="transition-colors bg-transparent border-0" onClick={() => handleEditClick(cellProps.row.original.id)}>
+                            {/* <button title="Edit" className="transition-colors bg-transparent border-0" onClick={() => handleEditClick(cellProps.row.original.id)}>
                                 <i className="fas fa-edit text-lg text-warning hover:text-orange-600"></i>
-                            </button>
+                            </button> */}
                             <button 
                                 title="Hapus" 
                                 onClick={() => handleDeleteClick(cellProps.row.original.id)}
@@ -1427,17 +1432,16 @@ const ListRambu = () => {
                     </ModalHeader>
                     <ModalBody>
                         <div className="d-flex justify-content-center gap-3 my-3">
-                            <Button color="danger" size="md" onClick={() => handleConfirmDelete('permanent')}>
+                            <Button color="danger" size="xl" onClick={() => handleConfirmDelete('permanent')}>
                                 <i className="fas fa-trash me-1"></i> Hapus 
                             </Button>
-                            <Button color="warning" size="md" className="text-white" onClick={() => handleConfirmDelete('trash')}>
+                            {/* <Button color="warning" size="md" className="text-white" onClick={() => handleConfirmDelete('trash')}>
                                 <i className="fas fa-trash-restore me-1"></i> Archived
-                            </Button>
+                            </Button> */}
                         </div>
                     </ModalBody>
                     <ModalFooter className="flex-column align-items-start bg-light text-muted small">
-                        <div><i className="fas fa-info-circle me-1"></i> Data yang terhapus selamanya <b>tidak bisa</b> dimunculkan lagi di kemudian hari.</div>
-                        <div><i className="fas fa-archive me-1"></i> Data yang dimasukan ke dalam archived dapat dilihat di menu Archive.</div>
+                        <div><i className="fas fa-info-circle me-1"></i> Data yang terhapus selamanya <b>tidak bisa</b> dimunculkan lagi di kemudian hari.</div>                        
                     </ModalFooter>
                 </Modal>
             </div>
