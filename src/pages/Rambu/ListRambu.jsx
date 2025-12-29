@@ -1,8 +1,8 @@
 // src/components/filter.
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import PropTypes from 'prop-types';
-import { MapPin, Edit, Trash2, Filter, FileSpreadsheet, Plus } from 'lucide-react';
-import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Label, Input, Row, Col } from 'reactstrap';
+import { MapPin, Edit, Trash2, Filter, FileSpreadsheet, Plus, File as FileIcon, CheckCircle, AlertTriangle, XCircle, Loader2 } from 'lucide-react';
+import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Label, Input, Row, Col, Spinner, Alert } from 'reactstrap';
 
 //import components
 import Breadcrumbs from '../../components/Common/Breadcrumb';
@@ -14,6 +14,7 @@ import maplibregl from "maplibre-gl";
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { toast } from "react-toastify"
 import * as XLSX from "xlsx";
+import useExcel from '../../hooks/useExcel';
 
 const MAPTILER_KEY = import.meta.env.VITE_APP_API_MAPTILER;
 const styleUrl = `https://api.maptiler.com/maps/streets-v4/style.json?key=${MAPTILER_KEY}`;
@@ -21,6 +22,7 @@ const styleUrl = `https://api.maptiler.com/maps/streets-v4/style.json?key=${MAPT
 const ListRambu = () => {
     const { data: rawData, loading, error, createRambu, updateRambu, deleteRambu, detailRambu, pagination, setPagination, fetchRambu, deleteTrashRambu, getRambuForEdit, updateRambuStatus, fetchAllRambu } = useRambu();
     const { getGeografis } = useGeografis();
+    const { importExcel, loading: importLoading } = useExcel();
 
     const data = useMemo(() => {
         return rawData || [];
@@ -68,11 +70,6 @@ const ListRambu = () => {
         }
     }, [searchTerm]);
 
-    // Fetch on pagination change
-    useEffect(() => {
-        fetchRambu(pagination.page, pagination.pageSize, { ...filterValues, search: searchTerm });
-    }, [pagination.page, pagination.pageSize]);
-
     // Add Form State
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [addForm, setAddForm] = useState({
@@ -96,9 +93,12 @@ const ListRambu = () => {
     // Delete Modal State
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [rambuToDeleteId, setRambuToDeleteId] = useState(null);
+    const [isImportExcelModalOpen, setIsImportExcelModalOpen] = useState(false);    
 
     // Detail Modal State
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+    const [importFile, setImportFile] = useState(null); // State for Excel file
+    const [importResult, setImportResult] = useState(null); // { type: 'success'|'error', message: string, details?: [] }
     const [detailData, setDetailData] = useState(null);
     const detailMapContainerRef = useRef(null);
     const detailMapRef = useRef(null);
@@ -220,6 +220,47 @@ const ListRambu = () => {
             ...(name === 'city_id' && { district_id: '', subdistrict_id: '' }),
             ...(name === 'district_id' && { subdistrict_id: '' }),
         }));
+    };
+
+    const handleImportToExcel = () => {
+        setIsImportExcelModalOpen(true);
+        setImportFile(null);
+        setImportResult(null);
+    };
+
+    const handleUploadExcel = async () => {
+        if (!importFile) {
+            alert("Pilih file excel terlebih dahulu");
+            return;
+        }
+        
+        setImportResult(null);
+        try {
+           const res = await importExcel(importFile);
+           // res structure: { message, importedCount, errors: [] }
+           if (res.errors && res.errors.length > 0) {
+               setImportResult({
+                   type: 'warning', // Partial success or soft error
+                   message: `Proses selesai dengan catatan. ${res.importedCount} data berhasil diimport.`,
+                   details: res.errors
+               });
+           } else {
+               setImportResult({
+                   type: 'success',
+                   message: `Import Berhasil! ${res.importedCount} data telah ditambahkan.`,
+               });
+               // Only close if perfect success? Or keep open to show message?
+               // User asked to "munculkan pesan respon di sisi bawah form". So we keep modal open.
+               toast.success("Import berhasil");
+               fetchRambu(pagination.page, pagination.pageSize); 
+           }
+        } catch (e) {
+            console.error(e);
+            setImportResult({
+                type: 'error',
+                message: "Import Gagal: " + (e.message || "Terjadi kesalahan sistem"),
+            });
+        }
     };
 
     const applyFilters = () => {
@@ -973,6 +1014,7 @@ const ListRambu = () => {
                     onGlobalFilterChangeProp={setSearchTerm}
                     isPagination={true}
                     SearchPlaceholder="Cari rambu..."
+                    //search style width dikurangi                    
                     // pagination="pagination" // Keeping this or removing if it causes duplicates, likely a className
                     paginationWrapper='dataTables_paginate paging_simple_numbers'
                     isCustomPageSize={true}
@@ -993,8 +1035,10 @@ const ListRambu = () => {
                              <Button color="primary" outline onClick={() => setIsFilterModalOpen(true)} className="d-flex align-items-center gap-2">
                                  <Filter size={16} /> Filter
                              </Button>
+                             <Button color="primary" outline onClick={handleImportToExcel} className="d-flex align-items-center gap-2">
+                                 <FileIcon size={16} /> Import Data </Button>  
                              <Button color="success" outline className="d-flex align-items-center gap-2" onClick={handleExportToExcel}>
-                                 <FileSpreadsheet size={16} /> Export Excel
+                                 <FileSpreadsheet size={16} /> Download Excel
                              </Button>
                              <Button color="primary" className="d-flex align-items-center gap-2" onClick={() => setIsAddModalOpen(true)}>
                                  <Plus size={16} /> Tambah Rambu
@@ -1445,6 +1489,71 @@ const ListRambu = () => {
                         <div><i className="fas fa-archive me-1"></i> Data yang dimasukan ke dalam archived dapat dilihat di menu Archive.</div>
                     </ModalFooter>
                 </Modal>
+                {/* Import Excel  Modal */}
+                <Modal isOpen={isImportExcelModalOpen} toggle={() => setIsImportExcelModalOpen(!isImportExcelModalOpen)} centered>
+                    <ModalHeader toggle={() => setIsImportExcelModalOpen(!isImportExcelModalOpen)} className="text-success">
+                        Import Excel
+                    </ModalHeader>
+                    <ModalBody>
+                        <div className="d-flex flex-column gap-3">
+                             <Label className="fw-bold">Pilih File Excel (.xlsx)</Label>
+                            <div className="input-group">
+                                <Input 
+                                    type="file" 
+                                    accept=".xlsx, .xls"
+                                    onChange={(e) => {
+                                        setImportFile(e.target.files[0]);
+                                        setImportResult(null); // Clear result on new file
+                                    }}
+                                    disabled={importLoading}
+                                />
+                            </div>
+                            
+                            {/* Loading State */}
+                            {importLoading && (
+                                <div className="text-center py-3 text-primary">
+                                    <Spinner size="sm" color="primary" className="me-2" />
+                                    <span>Sedang memproses data...</span>
+                                </div>
+                            )}
+
+                            {/* Result Messages */}
+                            {!importLoading && importResult && (
+                                <div className={`mt-2 p-3 rounded border ${
+                                    importResult.type === 'success' ? 'bg-soft-success border-success text-success' : 
+                                    importResult.type === 'error' ? 'bg-soft-danger border-danger text-danger' : 
+                                    'bg-soft-warning border-warning text-warning'
+                                }`}>
+                                    <div className="d-flex align-items-center gap-2 mb-1">
+                                        {importResult.type === 'success' && <CheckCircle size={20} />}
+                                        {importResult.type === 'error' && <XCircle size={20} />}
+                                        {importResult.type === 'warning' && <AlertTriangle size={20} />}
+                                        <span className="fw-bold fs-6">{importResult.message}</span>
+                                    </div>
+                                    
+                                    {/* Detailed Errors list */}
+                                    {importResult.details && (
+                                        <div className="mt-2 ps-4 small text-muted" style={{ maxHeight: '150px', overflowY: 'auto' }}>
+                                            <ul className="mb-0">
+                                                {importResult.details.map((err, idx) => (
+                                                    <li key={idx} className="text-danger">{err}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="d-flex justify-content-end gap-2 mt-3 pt-3 border-top">
+                                <Button color="light" onClick={() => setIsImportExcelModalOpen(false)} disabled={importLoading}>Tutup</Button>
+                                <Button color="success" onClick={handleUploadExcel} disabled={importLoading || !importFile}>
+                                    {importLoading ? <><Spinner size="sm" className="me-1"/> Uploading...</> : <><i className="fas fa-upload me-1"></i> Upload</>}
+                                </Button>
+                            </div>
+                        </div>
+                    </ModalBody>
+                </Modal>
+                
             </div>
         </div>
     );
