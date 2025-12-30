@@ -12,7 +12,7 @@ import useGeografis from '../../hooks/useGeografis';
 import { useOptions, useCategories, useDisasterTypes, useModels, useCostSources } from '../../hooks/useOptions';
 
 const MAPTILER_KEY = import.meta.env.VITE_APP_API_MAPTILER;
-const styleUrl = `https://api.maptiler.com/maps/topo-v4/style.json?key=${MAPTILER_KEY}`;
+const styleUrl = `https://api.maptiler.com/maps/streets-v4/style.json?key=${MAPTILER_KEY}`;
 import { apiUrl } from '../../lib/env';
 
 import { useDispatch } from 'react-redux';
