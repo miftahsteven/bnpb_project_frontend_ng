@@ -12,10 +12,12 @@ import {
   FormFeedback,
   Form,
 } from "reactstrap";
+import { toast } from "react-toastify";
 
 // Formik Validation
 import * as Yup from "yup";
 import { useFormik } from "formik";
+import useUser from "../../hooks/useUser";
 
 //redux
 import { useSelector, useDispatch } from "react-redux";
@@ -27,19 +29,30 @@ import withRouter from "../../components/Common/withRouter";
 import Breadcrumb from "../../components/Common/Breadcrumb";
 
 import avatar from "../../assets/images/users/avatar-1.jpg";
+import logoBNPB from "../../assets/images/logo_BNPB.png";
 // actions
 import { editProfile, resetProfileFlag } from "/src/store/actions";
 
 const UserProfile = (props) => {
 
   //meta title
-  document.title = "Profile | Skote - React Admin & Dashboard Template";
+  document.title = "Profile | BNPN User Profile";
 
   const dispatch = useDispatch();
-
-  const [email, setemail] = useState("");
+  const { getUser, updateUser, fetchSatuanKerja, satuanKerja } = useUser();
+  const [username, setusername] = useState("");
+  const [satker, setsatker] = useState("");
   const [name, setname] = useState("");
-  const [idx, setidx] = useState(1);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState("");
+  const [id, setid] = useState("");
+  const roles = [
+    { value: 1, label: "Superadmin" },
+    { value: 2, label: "Admin" },
+    { value: 3, label: "Manager" },
+    { value: 4, label: "User" },
+  ];
 
     const ProfileProperties = createSelector(
       (state) => state.Profile,
@@ -54,40 +67,59 @@ const UserProfile = (props) => {
       success
   } = useSelector(ProfileProperties);
 
-  useEffect(() => {
-    if (localStorage.getItem("authUser")) {
-      const obj = JSON.parse(localStorage.getItem("authUser"));
-      if (import.meta.env.VITE_APP_DEFAULTAUTH === "firebase") {
-        setname(obj.displayName);
-        setemail(obj.email);
-        setidx(obj.uid);
-      } else if (
-        import.meta.env.VITE_APP_DEFAULTAUTH === "fake" ||
-        import.meta.env.VITE_APP_DEFAULTAUTH === "jwt"
-      ) {
-        setname(obj.username);
-        setemail(obj.email);
-        setidx(obj.uid);
-      }
-      setTimeout(() => {
-        dispatch(resetProfileFlag());
-      }, 3000);
-    }
-  }, [dispatch, success]);
+  useEffect(() => {    
+    const auth = localStorage.getItem("auth");    
+    const id = auth ? JSON.parse(auth).user_id : null;
+    const getUserData = async () => {
+      const user = await getUser(id);      
+      setusername(user.username);
+      setsatker(user.satker_id);
+      setname(user.name);
+      //setPassword(user.password);
+      //setConfirmPassword(user.password);
+      setRole(user.role);
+      setid(user.id);
+    };
+    getUserData();
+
+    // Fetch satuan kerja
+    fetchSatuanKerja();
+  }, []); 
 
   const validation = useFormik({
     // enableReinitialize : use this flag when initial values needs to be changed
     enableReinitialize: true,
 
     initialValues: {
-      username: name || '',
-      idx: idx || '',
+      username: username || '',
+      name: name || '',
+      satker: satker || '',
+      role: role || '',
+      id: id || '',
+      password: password || '',
+      confirmPassword: confirmPassword || '',
     },
     validationSchema: Yup.object({
-      username: Yup.string().required("Please Enter Your UserName"),
+      username: Yup.string().required("Masukan UserName"),
     }),
     onSubmit: (values) => {
-      dispatch(editProfile(values));
+      if (values.password !== values.confirmPassword) {
+        toast.error("Password Tidak Sama");
+        return;
+      }
+      //password harus minimal 6 karakter, gabungan huruf dan angka, serta huruf besar
+      if (values.password.length < 6) {
+        toast.error("Password minimal 6 karakter");
+        return;
+      }
+      if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{6,}$/.test(values.password)) {
+        toast.error("Password harus mengandung huruf besar, huruf kecil, dan angka");
+        return;
+      }
+      
+      updateUser(id, values);
+      dispatch(resetProfileFlag());
+      toast.info("Profile berhasil diperbarui");
     }
   });
 
@@ -96,9 +128,9 @@ const UserProfile = (props) => {
       <div className="page-content">
         <Container fluid>
           {/* Render Breadcrumb */}
-          <Breadcrumb title="Skote" breadcrumbItem="Profile" />
+          <Breadcrumb title="User" breadcrumbItem="Profile" />
 
-          <Row>
+          {/* <Row>
             <Col lg="12">
               {error && error ? <Alert color="danger">{error}</Alert> : null}
               {success ? <Alert color="success">{success}</Alert> : null}
@@ -106,49 +138,60 @@ const UserProfile = (props) => {
               <Card>
                 <CardBody>
                   <div className="d-flex">
-                    <div className="ms-3">
+                    <div className="ms-2">
                       <img
-                        src={avatar}
+                        src={logoBNPB}
                         alt=""
-                        className="avatar-md rounded-circle img-thumbnail"
+                        className="avatar-lg"
+                        style={{ objectFit: 'contain' }}
                       />
                     </div>
-                    <div className="flex-grow-1 align-self-center">
-                      <div className="text-muted">
-                        <h5>{name}</h5>
-                        <p className="mb-1">{email}</p>
-                        <p className="mb-0">Id no: #{idx}</p>
-                      </div>
-                    </div>
+                    
                   </div>
                 </CardBody>
               </Card>
             </Col>
-          </Row>
+          </Row> */}
 
-          <h4 className="card-title mb-4">Change User Name</h4>
+          {/* <h4 className="card-title mb-4">Data Profil</h4> */}
 
           <Card>
             <CardBody>
               <Form
-                className="form-horizontal"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  validation.handleSubmit();
-                  return false;
-                }}
+                onSubmit={validation.handleSubmit}
+                className="form form-horizontal needs-validation"
+                noValidate
               >
-                <div className="form-group">
-                  <Label className="form-label">User Name</Label>
+                <div className="mb-3">
+                    <Label className="form-label">Nama Lengkap</Label>
+                    <Input
+                      name="name"
+                      className="form-control"
+                      placeholder="Masukan Nama Lengkap"
+                      type="text"
+                      onChange={validation.handleChange}
+                      onBlur={validation.handleBlur}
+                      value={validation.values.name || ""}
+                      invalid={
+                        validation.touched.name && validation.errors.name ? true : false
+                      }
+                    />
+                    {validation.touched.name && validation.errors.name ? (
+                      <FormFeedback type="invalid">{validation.errors.name}</FormFeedback>
+                    ) : null}
+                </div>
+
+                <div className="mb-3">
+                  <Label className="form-label">Username (NIP / Email)</Label>
                   <Input
                     name="username"
-                    // value={name}
-                    className="form-control"
-                    placeholder="Enter User Name"
+                    className="form-control bg-light"
+                    placeholder="Masukan User Name"
                     type="text"
                     onChange={validation.handleChange}
                     onBlur={validation.handleBlur}
                     value={validation.values.username || ""}
+                    readOnly
                     invalid={
                       validation.touched.username && validation.errors.username ? true : false
                     }
@@ -156,14 +199,103 @@ const UserProfile = (props) => {
                   {validation.touched.username && validation.errors.username ? (
                     <FormFeedback type="invalid">{validation.errors.username}</FormFeedback>
                   ) : null}
-                  <Input name="idx" value={idx} type="hidden" />
+                  <Input name="id" value={id} type="hidden" />
                 </div>
-                <div className="text-center mt-4">
-                  <Button type="submit" color="danger">
-                    Update User Name
+
+                <div className="mb-3">
+                  <Label className="form-label">Satuan Kerja</Label>
+                  <Input 
+                    type="select" 
+                    name="satker" 
+                    className="form-control form-select"
+                    onChange={validation.handleChange} 
+                    onBlur={validation.handleBlur} 
+                    value={validation.values.satker || ""}
+                  >
+                    <option value="">-- Pilih Satuan Kerja --</option>
+                    {satuanKerja.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </Input>
+                </div> 
+                <div className="mb-3">
+                  <Label className="form-label">Role</Label>
+                  <Input 
+                    type="select" 
+                    name="role" 
+                    disabled
+                    className="form-control form-select"
+                    onChange={validation.handleChange} 
+                    onBlur={validation.handleBlur} 
+                    value={validation.values.role || ""}
+                  >
+                    <option value="">-- Pilih Role --</option>
+                    {roles.map((item) => (
+                      <option key={item.value} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </Input>
+                </div>
+                <div className="p-3 bg-light rounded border mt-4 mb-3">
+                  <h6 className="card-title mb-3 text-dark"><i className="bx bx-lock-alt me-1"></i> Ubah Password</h6>
+                  <p className="card-title-desc text-muted small mb-3">
+                     <i className="mdi mdi-information-outline me-1"></i> Biarkan kosong jika tidak ingin mengubah password.
+                  </p>
+                  
+                  <Row>
+                    <Col md={6}>
+                      <div className="mb-3">
+                        <Label className="form-label">Password Baru</Label>
+                        <Input
+                          type="password"
+                          name="password"
+                          className="form-control"
+                          placeholder="Password Baru (Opsional)"
+                          onChange={validation.handleChange}
+                          onBlur={validation.handleBlur}
+                          value={validation.values.password || ""}
+                          invalid={
+                            validation.touched.password && validation.errors.password ? true : false
+                          }
+                        />
+                        {validation.touched.password && validation.errors.password ? (
+                          <FormFeedback type="invalid">{validation.errors.password}</FormFeedback>
+                        ) : null}
+                      </div>
+                    </Col>
+                    <Col md={6}>
+                      <div className="mb-3">
+                        <Label className="form-label">Konfirmasi Password</Label>
+                        <Input
+                          type="password"
+                          name="confirmPassword"
+                          className="form-control"
+                          placeholder="Ulangi Password Baru"
+                          onChange={validation.handleChange}
+                          onBlur={validation.handleBlur}
+                          value={validation.values.confirmPassword || ""}
+                          invalid={
+                            validation.touched.confirmPassword && validation.errors.confirmPassword ? true : false
+                          }
+                        />
+                        {validation.touched.confirmPassword && validation.errors.confirmPassword ? (
+                          <FormFeedback type="invalid">{validation.errors.confirmPassword}</FormFeedback>
+                        ) : null}
+                      </div>
+                    </Col>
+                  </Row>
+                </div>
+
+                <div className="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                   <Button type="button" color="light" className="w-md">Batal</Button>
+                   <Button type="submit" color="primary" className="w-md">
+                    <i className="bx bx-save font-size-16 align-middle me-2"></i> Simpan Perubahan
                   </Button>
                 </div>
-              </Form>
+              </Form> 
             </CardBody>
           </Card>
         </Container>

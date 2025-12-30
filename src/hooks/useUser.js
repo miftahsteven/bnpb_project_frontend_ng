@@ -59,10 +59,10 @@ const useUser = () => {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          //'Content-Type': 'application/json',
         },
       });
-      if (!response.ok) throw new Error('Failed to fetch user detail');
+      //if (!response.ok) throw new Error('Failed to fetch user detail');
       const result = await response.json();
       return result.data || result;
     } catch (err) {
@@ -150,6 +150,7 @@ const useUser = () => {
       });
       if (!response.ok) throw new Error('Failed to fetch satuan kerja');
       const result = await response.json();
+          
       setSatuanKerja(Array.isArray(result) ? result : (result.data || []));
       setError(null);
     } catch (err) {

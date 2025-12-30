@@ -184,34 +184,35 @@ const Navbar = (props) => {
                   </div>
                 </li>
                 )}
-                {role == 1 && (
-                <li className="nav-item dropdown">
-                  <Link
-                    to="/#"
-                    className="nav-link  arrow-none"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setcomponent(!component);
-                    }}
-                  >
-                    <i className="bx bx-collection me-2"></i>
-                    {props.t("Data Referensi")} <div className="arrow-down"></div>
-                  </Link>
-                  <div
-                    className={classname("dropdown-menu", { show: component })}
-                  >
-                    <Link to="/kategori-rambu" className="dropdown-item">
-                      {props.t("List Kategori Rambu")}
-                    </Link>
-                    <Link to="/jenis-rambu" className="dropdown-item">
-                      {props.t("List Jenis Rambu")}
-                    </Link>
-                    <Link to="/satker" className="dropdown-item">
-                      {props.t("Satuan Kerja")}
-                    </Link>
-                  </div>
-                </li>
-                )}
+                {//role == 1 && (
+                // <li className="nav-item dropdown">
+                //   <Link
+                //     to="/#"
+                //     className="nav-link  arrow-none"
+                //     onClick={(e) => {
+                //       e.preventDefault();
+                //       setcomponent(!component);
+                //     }}
+                //   >
+                //     <i className="bx bx-collection me-2"></i>
+                //     {props.t("Data Referensi")} <div className="arrow-down"></div>
+                //   </Link>
+                //   <div
+                //     className={classname("dropdown-menu", { show: component })}
+                //   >
+                //     <Link to="/kategori-rambu" className="dropdown-item">
+                //       {props.t("List Kategori Rambu")}
+                //     </Link>
+                //     <Link to="/jenis-rambu" className="dropdown-item">
+                //       {props.t("List Jenis Rambu")}
+                //     </Link>
+                //     <Link to="/satker" className="dropdown-item">
+                //       {props.t("Satuan Kerja")}
+                //     </Link>
+                //   </div>
+                // </li>
+                //)
+                }
                 
               </ul>
             </Collapse>

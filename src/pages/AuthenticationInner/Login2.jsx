@@ -140,9 +140,9 @@ const Login2 = () => {
                           </div>
 
                           <div className="mb-3">
-                            <div className="float-end">
+                            {/* <div className="float-end">
                               <Link to="/auth-recoverpw-2" className="text-muted">Forgot password?</Link>
-                            </div>
+                            </div> */}
                             <Label className="form-label">Kata Sandi</Label>
                             <div className="input-group auth-pass-inputgroup">
                               <Input

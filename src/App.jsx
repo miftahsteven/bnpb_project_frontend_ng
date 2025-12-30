@@ -42,6 +42,10 @@ fakeBackend();
 // init firebase backend
 // initFirebaseBackend(firebaseConfig)
 
+// Import Toastify
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 const App = (props) => {
   const LayoutProperties = createSelector(
     (state) => state.Layout,
@@ -94,6 +98,7 @@ const App = (props) => {
           />
         ))}
       </Routes>
+      <ToastContainer autoClose={3000} />
     </React.Fragment>
   );
 };
