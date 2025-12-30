@@ -161,6 +161,9 @@ const Navbar = (props) => {
                     <Link to="/list-archived" className="dropdown-item">
                       {props.t("List Archived")}
                     </Link>
+                    <Link to="/simulasi" className="dropdown-item">
+                      {props.t("Simulasi")}
+                    </Link>
                   </div>
                 </li>
                 { role == 1 && (

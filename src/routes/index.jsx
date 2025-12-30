@@ -12,6 +12,7 @@ import ListUser from "../pages/User/ListUser";
 
 //FULL MAP
 import FullMap from "../pages/Full-Map/index";
+import Simulation from "../pages/Full-Map/simulation";
 
 
 // // Profile
@@ -27,6 +28,7 @@ const authProtectedRoutes = [
   { path: "/list-user", component: <ListUser /> },
   { path: "/profile", component: <UserProfile /> },
   { path: "/dashboard-fullmap", component: <FullMap /> },
+  { path: "/simulasi", component: <Simulation /> },
 ];
 
 const publicRoutes = [
