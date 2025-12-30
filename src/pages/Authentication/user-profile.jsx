@@ -29,7 +29,7 @@ import withRouter from "../../components/Common/withRouter";
 import Breadcrumb from "../../components/Common/Breadcrumb";
 
 import avatar from "../../assets/images/users/avatar-1.jpg";
-import logoBNPB from "../../assets/images/logo_BNPB.png";
+import logoBNPB from "../../assets/images/Logo_BNPB.png";
 // actions
 import { editProfile, resetProfileFlag } from "/src/store/actions";
 
