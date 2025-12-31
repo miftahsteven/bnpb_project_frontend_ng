@@ -12,6 +12,7 @@ import ListUser from "../pages/User/ListUser";
 
 //FULL MAP
 import FullMap from "../pages/Full-Map/index";
+import FullMap3 from "../pages/Full-Map/fullmap3";
 import Simulation from "../pages/Full-Map/simulation";
 
 
@@ -38,5 +39,8 @@ const publicRoutes = [
   { path: "/", component: <Navigate to="/login" /> },
 ]
 
-// export { authProtectedRoutes, publicRoutes };
-export { authProtectedRoutes, publicRoutes }
+const standaloneRoutes = [
+  { path: "/map-perprovince", component: <FullMap3 /> },
+];
+
+export { authProtectedRoutes, publicRoutes, standaloneRoutes }

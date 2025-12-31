@@ -8,7 +8,7 @@ import { useSelector } from "react-redux";
 import { createSelector } from "reselect";
 
 // Import Routes all
-import { authProtectedRoutes, publicRoutes } from "./routes/index";
+import { authProtectedRoutes, publicRoutes, standaloneRoutes } from "./routes/index";
 
 // Import all middleware
 import Authmiddleware from "./routes/route";
@@ -97,6 +97,20 @@ const App = (props) => {
             exact={true}
           />
         ))}
+
+        {standaloneRoutes.map((route, idx) => (
+          <Route
+            path={route.path}
+            element={
+              <Authmiddleware>
+                {route.component}
+              </Authmiddleware>
+            }
+            key={idx}
+            exact={true}
+          />
+        ))}
+
       </Routes>
       <ToastContainer autoClose={3000} />
     </React.Fragment>

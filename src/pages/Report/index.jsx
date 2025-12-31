@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Container } from 'reactstrap';
 import useReport from '../../hooks/useReport';
 import ReactApexChart from "react-apexcharts";
-
+import FullMap3 from '../Full-Map/fullmap3';
 
 const Report = () => {
   const { getDashboardStats, getReportPerProvince, getReportPerUser, loading, error } = useReport();
@@ -167,7 +167,26 @@ const Report = () => {
                 </div>
             </div>  
         </div>
+      </div>      
+      {/*  */}
+      <div className="row mt-4">
+        <div className="col-12">
+          <div className="card border-0 shadow-sm">
+            <div className="card-body">
+              <h5 className="card-title mb-4" style={{ color: '#2c3e50', fontWeight: 'bold' }}>Full Map View</h5>
+              <div className="ratio ratio-16x9" style={{ minHeight: '400px' }}>
+                <iframe
+                  src="/map-perprovince"
+                  title="Full Map View"
+                  style={{ border: 0, borderRadius: '8px' }}
+                  allowFullScreen
+                ></iframe>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+      
     </Container>    
     </div>
   );
